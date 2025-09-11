@@ -589,7 +589,7 @@ class BoardController {
 
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="${board.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.json"`);
-      
+
       res.json(exportData);
     } catch (error) {
       console.error('Export board error:', error);
@@ -654,18 +654,18 @@ class BoardController {
 
           column.cards.forEach(card => {
             totalCards++;
-            
+
             if (card.createdAt >= weekAgo) cardsThisWeek++;
             if (card.createdAt >= monthAgo) cardsThisMonth++;
-            
+
             if (!card.deletedAt) {
               priorityStats[card.priority]++;
-              
+
               // Assuming last column is "Done"
               if (column.position === board.columns.length - 1) {
                 completedCards++;
               }
-              
+
               if (card.dueDate && card.dueDate < now && column.position !== board.columns.length - 1) {
                 overdueCards++;
               }
@@ -675,7 +675,7 @@ class BoardController {
 
         stats = {
           totalCards,
-          activeCards: totalCards - board.columns.reduce((sum, col) => 
+          activeCards: totalCards - board.columns.reduce((sum, col) =>
             sum + col.cards.filter(card => card.deletedAt).length, 0),
           completedCards,
           overdueCards,

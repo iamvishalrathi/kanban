@@ -13,7 +13,7 @@ class SocketService {
     global.io = io; // Make io globally available for other services
 
     io.use(this.authenticateSocket.bind(this));
-    
+
     io.on('connection', (socket) => {
       console.log(`Socket connected: ${socket.id}`);
       this.handleConnection(socket);
@@ -25,7 +25,7 @@ class SocketService {
   async authenticateSocket(socket, next) {
     try {
       const token = socket.handshake.auth?.token || socket.handshake.query?.token;
-      
+
       if (!token) {
         return next(new Error('Authentication error: No token provided'));
       }
@@ -143,7 +143,7 @@ class SocketService {
 
       // Join board room
       socket.join(`board:${boardId}`);
-      
+
       // Update user info
       userInfo.currentBoard = boardId;
       this.connectedUsers.set(socket.id, userInfo);
@@ -160,7 +160,7 @@ class SocketService {
 
       // Get current board presence
       const boardPresence = await redisService.getBoardPresence(boardId);
-      
+
       // Notify others in the board
       socket.to(`board:${boardId}`).emit('presence:user_joined', {
         user: {
@@ -266,7 +266,7 @@ class SocketService {
       if (lockValue) {
         // Lock acquired successfully
         socket.emit('card:edit:locked', { cardId, lockValue });
-        
+
         // Notify others that this card is being edited
         socket.to(`board:${boardId}`).emit('card:edit:locked_by_other', {
           cardId,
@@ -275,9 +275,9 @@ class SocketService {
         });
       } else {
         // Lock not available
-        socket.emit('card:edit:lock_failed', { 
-          cardId, 
-          message: 'Card is currently being edited by another user' 
+        socket.emit('card:edit:lock_failed', {
+          cardId,
+          message: 'Card is currently being edited by another user'
         });
       }
     } catch (error) {
@@ -305,7 +305,7 @@ class SocketService {
   handleOptimisticAck(socket, data) {
     // Handle acknowledgment of optimistic updates
     const { updateId, success, error } = data;
-    
+
     if (success) {
       console.log(`Optimistic update ${updateId} confirmed`);
     } else {
@@ -334,14 +334,14 @@ class SocketService {
   async handleDisconnection(socket) {
     try {
       const userInfo = this.connectedUsers.get(socket.id);
-      
+
       if (userInfo) {
         const { userId, currentBoard } = userInfo;
 
         // Clean up presence
         if (currentBoard) {
           await redisService.removeUserPresence(currentBoard, userId);
-          
+
           // Notify others in the board
           socket.to(`board:${currentBoard}`).emit('presence:user_left', {
             userId,
@@ -351,7 +351,7 @@ class SocketService {
 
         // Release any locks held by this user
         // Note: This is a simplified approach. In production, you might want to track locks per user
-        
+
         // Remove from connected users
         this.connectedUsers.delete(socket.id);
 
@@ -418,7 +418,7 @@ class SocketService {
 
     for (const [socketId, userInfo] of this.connectedUsers) {
       const userId = userInfo.userId;
-      
+
       // Count connections per user
       if (!stats.userConnections[userId]) {
         stats.userConnections[userId] = 0;
@@ -442,7 +442,7 @@ class SocketService {
   disconnectUser(userId, reason = 'Administrative action') {
     if (this.io) {
       this.io.to(`user:${userId}`).emit('force:disconnect', { reason });
-      
+
       // Find and disconnect all sockets for this user
       for (const [socketId, userInfo] of this.connectedUsers) {
         if (userInfo.userId === userId) {

@@ -7,7 +7,7 @@ const validateRequest = (validations) => {
 
     // Check for validation errors
     const errors = validationResult(req);
-    
+
     if (!errors.isEmpty()) {
       const formattedErrors = errors.array().map(error => ({
         field: error.param || error.path,

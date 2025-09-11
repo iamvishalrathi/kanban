@@ -13,7 +13,7 @@ export const Column = ({ column, onCreateCard }) => {
             {column.cards?.length || 0}
           </span>
         </div>
-        
+
         <div className="flex items-center space-x-1">
           <button
             onClick={onCreateCard}
@@ -22,7 +22,7 @@ export const Column = ({ column, onCreateCard }) => {
           >
             <Plus className="w-4 h-4" />
           </button>
-          
+
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -30,7 +30,7 @@ export const Column = ({ column, onCreateCard }) => {
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
-            
+
             {showMenu && (
               <div className="absolute right-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-secondary-200 py-1 z-20">
                 <button className="w-full text-left px-3 py-2 text-sm text-secondary-700 hover:bg-secondary-50">
@@ -48,7 +48,7 @@ export const Column = ({ column, onCreateCard }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Overlay to close menu */}
       {showMenu && (
         <div

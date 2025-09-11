@@ -13,7 +13,7 @@ class CommentController {
       const offset = (page - 1) * limit;
 
       const comments = await Comment.findAndCountAll({
-        where: { 
+        where: {
           cardId,
           parentId: null // Only top-level comments
         },
@@ -114,7 +114,7 @@ class CommentController {
       const mentionRegex = /@([a-zA-Z0-9_]+)/g;
       const mentions = [];
       let match;
-      
+
       while ((match = mentionRegex.exec(content)) !== null) {
         mentions.push(match[1]);
       }
@@ -228,7 +228,7 @@ class CommentController {
       const mentionRegex = /@([a-zA-Z0-9_]+)/g;
       const mentions = [];
       let match;
-      
+
       while ((match = mentionRegex.exec(content)) !== null) {
         mentions.push(match[1]);
       }

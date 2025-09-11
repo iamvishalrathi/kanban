@@ -117,7 +117,7 @@ export const DashboardPage = () => {
                     />
                   </div>
                 </div>
-                
+
                 {board.description && (
                   <p className="text-secondary-600 text-sm mb-4 line-clamp-2">
                     {board.description}

@@ -7,18 +7,18 @@ const checkBoardAccess = (requiredRole = null) => {
       const userId = req.userId;
 
       if (!boardId) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Board ID is required' 
+        return res.status(400).json({
+          success: false,
+          message: 'Board ID is required'
         });
       }
 
       // Check if board exists
       const board = await Board.findByPk(boardId);
       if (!board || board.isArchived) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Board not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Board not found'
         });
       }
 
@@ -43,9 +43,9 @@ const checkBoardAccess = (requiredRole = null) => {
       });
 
       if (!membership) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Access denied to this board' 
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this board'
         });
       }
 
@@ -56,9 +56,9 @@ const checkBoardAccess = (requiredRole = null) => {
         const requiredRoleIndex = roleHierarchy.indexOf(requiredRole);
 
         if (userRoleIndex < requiredRoleIndex) {
-          return res.status(403).json({ 
-            success: false, 
-            message: `${requiredRole} access required` 
+          return res.status(403).json({
+            success: false,
+            message: `${requiredRole} access required`
           });
         }
       }
@@ -76,9 +76,9 @@ const checkBoardAccess = (requiredRole = null) => {
       next();
     } catch (error) {
       console.error('Board access check error:', error);
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Failed to verify board access' 
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to verify board access'
       });
     }
   };

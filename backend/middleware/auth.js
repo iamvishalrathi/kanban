@@ -7,22 +7,22 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Access token is required' 
+      return res.status(401).json({
+        success: false,
+        message: 'Access token is required'
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     const user = await User.findByPk(decoded.userId, {
       attributes: { exclude: ['password'] }
     });
 
     if (!user || !user.isActive) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid or inactive user' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or inactive user'
       });
     }
 
@@ -34,21 +34,21 @@ const authenticateToken = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid token' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
       });
     } else if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Token expired' 
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
       });
     }
-    
+
     console.error('Authentication error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Authentication failed' 
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication failed'
     });
   }
 };
@@ -69,7 +69,7 @@ const optionalAuth = async (req, res, next) => {
         req.userId = user.id;
       }
     }
-    
+
     next();
   } catch (error) {
     // For optional auth, we don't return an error, just continue without user
@@ -79,9 +79,9 @@ const optionalAuth = async (req, res, next) => {
 
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Admin access required' 
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
     });
   }
   next();

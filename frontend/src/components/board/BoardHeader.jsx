@@ -24,7 +24,7 @@ export const BoardHeader = ({ board }) => {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            
+
             <div className="flex items-center space-x-3">
               <div
                 className="w-6 h-6 rounded-md flex-shrink-0"
@@ -99,7 +99,7 @@ export const BoardHeader = ({ board }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Overlay to close menu */}
       {showMenu && (
         <div

@@ -117,7 +117,7 @@ class AuthController {
 
       // Find user by email
       const user = await User.findOne({
-        where: { 
+        where: {
           email: email.toLowerCase(),
           isActive: true
         }
@@ -204,7 +204,7 @@ class AuthController {
   async updateProfile(req, res) {
     try {
       const { firstName, lastName, avatar } = req.body;
-      
+
       const user = await User.findByPk(req.userId);
 
       if (!user) {
@@ -244,7 +244,7 @@ class AuthController {
   async changePassword(req, res) {
     try {
       const { currentPassword, newPassword } = req.body;
-      
+
       const user = await User.findByPk(req.userId);
 
       if (!user) {

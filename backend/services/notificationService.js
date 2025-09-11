@@ -177,8 +177,8 @@ class NotificationService {
       const card = await Card.findByPk(cardId, {
         include: [
           { model: User, as: 'assignee' },
-          { 
-            model: Column, 
+          {
+            model: Column,
             as: 'column',
             include: [{ model: Board, as: 'board' }]
           }
@@ -211,8 +211,8 @@ class NotificationService {
     try {
       const card = await Card.findByPk(cardId, {
         include: [
-          { 
-            model: Column, 
+          {
+            model: Column,
             as: 'column',
             include: [{ model: Board, as: 'board' }]
           }
@@ -223,7 +223,7 @@ class NotificationService {
 
       const mentionPromises = mentionedUserIds
         .filter(userId => userId !== authorId) // Don't notify the author
-        .map(userId => 
+        .map(userId =>
           this.createNotification({
             type: 'mentioned',
             title: 'You were mentioned',
@@ -277,8 +277,8 @@ class NotificationService {
       const card = await Card.findByPk(cardId, {
         include: [
           { model: User, as: 'assignee' },
-          { 
-            model: Column, 
+          {
+            model: Column,
             as: 'column',
             include: [{ model: Board, as: 'board' }]
           }
@@ -327,8 +327,8 @@ class NotificationService {
         },
         include: [
           { model: User, as: 'assignee' },
-          { 
-            model: Column, 
+          {
+            model: Column,
             as: 'column',
             include: [{ model: Board, as: 'board' }]
           }
@@ -347,8 +347,8 @@ class NotificationService {
         },
         include: [
           { model: User, as: 'assignee' },
-          { 
-            model: Column, 
+          {
+            model: Column,
             as: 'column',
             include: [{ model: Board, as: 'board' }]
           }
@@ -459,9 +459,9 @@ class NotificationService {
   async markAllAsRead(userId) {
     try {
       await Notification.update(
-        { 
-          isRead: true, 
-          readAt: new Date() 
+        {
+          isRead: true,
+          readAt: new Date()
         },
         {
           where: {
@@ -487,7 +487,7 @@ class NotificationService {
     try {
       const offset = (page - 1) * limit;
       const whereClause = { recipientId: userId };
-      
+
       if (unreadOnly) {
         whereClause.isRead = false;
       }
@@ -495,8 +495,8 @@ class NotificationService {
       const notifications = await Notification.findAndCountAll({
         where: whereClause,
         include: [
-          { 
-            model: User, 
+          {
+            model: User,
             as: 'triggeredBy',
             attributes: ['id', 'firstName', 'lastName', 'avatar']
           },

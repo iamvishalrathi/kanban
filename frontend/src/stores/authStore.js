@@ -16,7 +16,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true })
           const response = await authApi.login(credentials)
-          
+
           if (response.success) {
             set({
               user: response.data.user,
@@ -43,7 +43,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true })
           const response = await authApi.register(userData)
-          
+
           if (response.success) {
             set({
               user: response.data.user,
@@ -85,7 +85,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true })
           const response = await authApi.updateProfile(profileData)
-          
+
           if (response.success) {
             set((state) => ({
               user: { ...state.user, ...response.data.user },
@@ -116,7 +116,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true })
           const response = await authApi.getProfile()
-          
+
           if (response.success) {
             set({
               user: response.data.user,

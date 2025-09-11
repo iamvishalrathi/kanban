@@ -6,13 +6,13 @@ import * as yup from 'yup'
 import { cardApi, commentApi } from '../../services/api'
 import { useAuthStore } from '../../stores/authStore'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
-import { 
-  X, 
-  Calendar, 
-  Tag, 
-  MessageCircle, 
-  User, 
-  Edit2, 
+import {
+  X,
+  Calendar,
+  Tag,
+  MessageCircle,
+  User,
+  Edit2,
   Trash2,
   Send,
   Clock,
@@ -140,9 +140,9 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
   }
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', { 
+    return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long', 
+      month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'

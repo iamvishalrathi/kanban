@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Public routes
-router.post('/register', 
+router.post('/register',
   authRateLimit,
   validate(schemas.register),
   authController.register

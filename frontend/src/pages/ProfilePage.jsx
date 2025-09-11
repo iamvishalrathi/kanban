@@ -136,11 +136,10 @@ export const ProfilePage = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
-                      activeTab === tab.id
+                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${activeTab === tab.id
                         ? 'border-primary-500 text-primary-600'
                         : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4 mr-2" />
                     {tab.label}

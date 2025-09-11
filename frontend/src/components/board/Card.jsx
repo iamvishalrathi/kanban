@@ -4,15 +4,15 @@ export const Card = ({ card }) => {
   if (!card) return null
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     })
   }
 
   const isOverdue = card.dueDate && new Date(card.dueDate) < new Date()
-  const isDueSoon = card.dueDate && 
-    new Date(card.dueDate) > new Date() && 
+  const isDueSoon = card.dueDate &&
+    new Date(card.dueDate) > new Date() &&
     new Date(card.dueDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
   const getPriorityColor = (priority) => {
@@ -74,13 +74,12 @@ export const Card = ({ card }) => {
 
       {/* Due date */}
       {card.dueDate && (
-        <div className={`flex items-center space-x-1 mb-2 text-xs ${
-          isOverdue 
-            ? 'text-red-600' 
-            : isDueSoon 
-            ? 'text-yellow-600' 
-            : 'text-secondary-600'
-        }`}>
+        <div className={`flex items-center space-x-1 mb-2 text-xs ${isOverdue
+            ? 'text-red-600'
+            : isDueSoon
+              ? 'text-yellow-600'
+              : 'text-secondary-600'
+          }`}>
           {isOverdue && <AlertCircle className="w-3 h-3" />}
           <Calendar className="w-3 h-3" />
           <span>{formatDate(card.dueDate)}</span>

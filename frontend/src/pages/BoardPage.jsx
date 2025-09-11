@@ -17,7 +17,7 @@ export const BoardPage = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { socket } = useSocket()
-  
+
   const [isCreateCardModalOpen, setIsCreateCardModalOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState(null)
   const [createCardColumnId, setCreateCardColumnId] = useState(null)
@@ -65,28 +65,28 @@ export const BoardPage = () => {
       if (data.boardId === boardId) {
         queryClient.setQueryData(['board', boardId], (oldData) => {
           if (!oldData) return oldData
-          
+
           const updatedBoard = { ...oldData }
           const columns = [...updatedBoard.data.board.columns]
-          
+
           // Find source and destination columns
-          const sourceColumn = columns.find(col => 
+          const sourceColumn = columns.find(col =>
             col.cards.some(card => card.id === data.cardId)
           )
           const destColumn = columns.find(col => col.id === data.columnId)
-          
+
           if (sourceColumn && destColumn) {
             // Remove card from source
             const card = sourceColumn.cards.find(c => c.id === data.cardId)
             sourceColumn.cards = sourceColumn.cards.filter(c => c.id !== data.cardId)
-            
+
             // Add card to destination
             if (card) {
               card.columnId = data.columnId
               destColumn.cards.splice(data.position, 0, card)
             }
           }
-          
+
           return updatedBoard
         })
       }
@@ -129,19 +129,19 @@ export const BoardPage = () => {
     // Optimistic update
     queryClient.setQueryData(['board', boardId], (oldData) => {
       if (!oldData) return oldData
-      
+
       const updatedBoard = { ...oldData }
       const columns = [...updatedBoard.data.board.columns]
-      
+
       const sourceColumn = columns.find(col => col.id === source.droppableId)
       const destColumn = columns.find(col => col.id === destination.droppableId)
-      
+
       if (sourceColumn && destColumn) {
         const [movedCard] = sourceColumn.cards.splice(source.index, 1)
         movedCard.columnId = columnId
         destColumn.cards.splice(destination.index, 0, movedCard)
       }
-      
+
       return updatedBoard
     })
 
@@ -205,7 +205,7 @@ export const BoardPage = () => {
   return (
     <div className="min-h-screen bg-secondary-50">
       <BoardHeader board={board} />
-      
+
       <main className="h-screen pt-16 pb-4">
         <div className="h-full px-4 sm:px-6 lg:px-8">
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -217,15 +217,14 @@ export const BoardPage = () => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`bg-white rounded-lg shadow-card h-full flex flex-col ${
-                          snapshot.isDraggingOver ? 'ring-2 ring-primary-500 ring-opacity-50' : ''
-                        }`}
+                        className={`bg-white rounded-lg shadow-card h-full flex flex-col ${snapshot.isDraggingOver ? 'ring-2 ring-primary-500 ring-opacity-50' : ''
+                          }`}
                       >
                         <Column
                           column={column}
                           onCreateCard={() => handleCreateCard(column.id)}
                         />
-                        
+
                         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
                           {column.cards?.map((card, index) => (
                             <Draggable
@@ -239,9 +238,8 @@ export const BoardPage = () => {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   onClick={() => handleCardClick(card)}
-                                  className={`${
-                                    snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
-                                  }`}
+                                  className={`${snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
+                                    }`}
                                 >
                                   <Card card={card} />
                                 </div>

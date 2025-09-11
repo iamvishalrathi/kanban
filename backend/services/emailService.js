@@ -75,7 +75,7 @@ class EmailService {
     const dueDate = new Date(card.dueDate);
     const now = new Date();
     const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #d97706;">Card Due Soon</h2>
@@ -109,7 +109,7 @@ class EmailService {
   // Card overdue notification
   async sendCardOverdueEmail(assignee, card, board) {
     const subject = `Overdue: "${card.title}" was due ${new Date(card.dueDate).toLocaleDateString()}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #dc2626;">Card Overdue</h2>
@@ -143,7 +143,7 @@ class EmailService {
   // Mention notification
   async sendMentionEmail(mentionedUser, comment, card, board, author) {
     const subject = `You were mentioned in "${card.title}"`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">You Were Mentioned</h2>
@@ -179,7 +179,7 @@ class EmailService {
   // Board invitation
   async sendBoardInvitationEmail(invitedUser, board, invitedBy, role) {
     const subject = `You've been invited to join "${board.title}"`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #059669;">Board Invitation</h2>
@@ -212,7 +212,7 @@ class EmailService {
   // Weekly digest
   async sendWeeklyDigest(user, boardsData) {
     const subject = 'Your Weekly Kanban Digest';
-    
+
     let boardsHtml = '';
     boardsData.forEach(boardData => {
       boardsHtml += `
@@ -226,7 +226,7 @@ class EmailService {
         </div>
       `;
     });
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Your Weekly Digest</h2>

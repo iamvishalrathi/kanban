@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const validate = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body, { 
+    const { error } = schema.validate(req.body, {
       abortEarly: false,
       allowUnknown: false,
       stripUnknown: true
@@ -27,7 +27,7 @@ const validate = (schema) => {
 
 const validateParams = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.params, { 
+    const { error } = schema.validate(req.params, {
       abortEarly: false,
       allowUnknown: false,
       stripUnknown: true
@@ -52,7 +52,7 @@ const validateParams = (schema) => {
 
 const validateQuery = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.query, { 
+    const { error } = schema.validate(req.query, {
       abortEarly: false,
       allowUnknown: true,
       stripUnknown: true

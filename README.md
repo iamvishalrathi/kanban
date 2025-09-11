@@ -5,6 +5,7 @@ A professional, production-ready Kanban board application with real-time collabo
 ## 🚀 Features
 
 ### Core Features
+
 - **Real-time Collaboration**: Multiple users can work simultaneously with live updates
 - **Drag & Drop Interface**: Intuitive card and column management
 - **Board Management**: Create, duplicate, export, and manage multiple boards
@@ -15,6 +16,7 @@ A professional, production-ready Kanban board application with real-time collabo
 - **Notifications**: Real-time and email notifications
 
 ### Technical Features
+
 - **WebSocket Integration**: Real-time updates using Socket.IO
 - **Optimistic UI**: Immediate UI updates with conflict resolution
 - **Presence Indicators**: See who's online and typing
@@ -26,6 +28,7 @@ A professional, production-ready Kanban board application with real-time collabo
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **React 18** with hooks and modern patterns
 - **Vite** for fast development and building
 - **Tailwind CSS** for styling and responsive design
@@ -37,6 +40,7 @@ A professional, production-ready Kanban board application with real-time collabo
 - **React Hot Toast** for notifications
 
 ### Backend
+
 - **Node.js** with Express.js framework
 - **Socket.IO** for WebSocket communication
 - **Sequelize ORM** with PostgreSQL
@@ -47,6 +51,7 @@ A professional, production-ready Kanban board application with real-time collabo
 - **Rate limiting** and input validation
 
 ### Database & Services
+
 - **Supabase PostgreSQL** for primary database
 - **Upstash Redis** for caching and real-time features
 - **SendGrid** for email notifications
@@ -54,6 +59,7 @@ A professional, production-ready Kanban board application with real-time collabo
 ## 📦 Installation & Setup
 
 ### Prerequisites
+
 - Node.js 18 or higher
 - Docker (for containerized deployment)
 - PostgreSQL database (Supabase recommended)
@@ -63,12 +69,14 @@ A professional, production-ready Kanban board application with real-time collabo
 ### Local Development
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd kanban
    ```
 
 2. **Backend Setup**
+
    ```bash
    cd backend
    npm install
@@ -77,14 +85,16 @@ A professional, production-ready Kanban board application with real-time collabo
    ```
 
 3. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
    ```
 
 4. **Environment Variables**
-   
+
    Create `.env` file in the backend directory:
+
    ```env
    # Server Configuration
    NODE_ENV=development
@@ -112,12 +122,14 @@ A professional, production-ready Kanban board application with real-time collabo
    ```
 
 5. **Database Setup**
+
    ```bash
    cd backend
    npm run db:migrate  # Run database migrations
    ```
 
 6. **Start Development Servers**
+
    ```bash
    # Backend (Terminal 1)
    cd backend
@@ -135,6 +147,7 @@ A professional, production-ready Kanban board application with real-time collabo
 ### Docker Deployment
 
 1. **Build and Run with Docker**
+
    ```bash
    docker build -t kanban-app .
    docker run -p 80:80 \
@@ -154,6 +167,7 @@ A professional, production-ready Kanban board application with real-time collabo
 ## 🎯 Usage
 
 ### Getting Started
+
 1. **Register/Login**: Create an account or sign in
 2. **Create Board**: Start with a new Kanban board
 3. **Add Columns**: Create workflow columns (e.g., To Do, In Progress, Done)
@@ -164,12 +178,14 @@ A professional, production-ready Kanban board application with real-time collabo
 ### Key Features Usage
 
 #### Board Management
+
 - **Create Board**: Click "New Board" and customize settings
 - **Duplicate Board**: Use templates or copy existing boards
 - **Export Board**: Download board data as JSON
 - **Board Settings**: Configure visibility, templates, and permissions
 
 #### Card Operations
+
 - **Drag & Drop**: Move cards between columns or reorder within columns
 - **Rich Editing**: Add descriptions, due dates, labels, and attachments
 - **Assignments**: Assign cards to team members
@@ -177,12 +193,14 @@ A professional, production-ready Kanban board application with real-time collabo
 - **History**: Track all changes with audit trail
 
 #### Real-time Features
+
 - **Live Updates**: See changes from other users instantly
 - **Presence Indicators**: Green dots show who's online
 - **Typing Indicators**: See when someone is typing a comment
 - **Conflict Resolution**: Automatic handling of simultaneous edits
 
 #### Team Collaboration
+
 - **Role Management**: Owner, Admin, Editor, Viewer permissions
 - **Invitations**: Email invites with role assignment
 - **Notifications**: Real-time and email alerts for important events
@@ -214,16 +232,19 @@ A professional, production-ready Kanban board application with real-time collabo
 ### Common Issues
 
 1. **Database Connection Failed**
+
    - Check DATABASE_URL in .env
    - Ensure PostgreSQL is running
    - Verify network connectivity
 
 2. **Redis Connection Failed**
+
    - Check REDIS_URL in .env
    - Ensure Redis instance is accessible
    - Verify authentication credentials
 
 3. **WebSocket Connection Issues**
+
    - Check CORS configuration
    - Verify Socket.IO client/server versions
    - Check network/firewall settings
@@ -234,6 +255,7 @@ A professional, production-ready Kanban board application with real-time collabo
    - Verify sender email verification
 
 ### Debug Mode
+
 ```bash
 # Enable debug logging
 DEBUG=kanban:* npm run dev
@@ -242,6 +264,7 @@ DEBUG=kanban:* npm run dev
 ## 🚀 Deployment
 
 ### Production Checklist
+
 - [ ] Update environment variables for production
 - [ ] Configure production database
 - [ ] Set up Redis instance
@@ -253,6 +276,7 @@ DEBUG=kanban:* npm run dev
 - [ ] Test all features in production
 
 ### Render.com Deployment
+
 1. Fork this repository
 2. Connect to Render.com
 3. Create new Web Service
@@ -265,12 +289,14 @@ DEBUG=kanban:* npm run dev
 The backend provides a RESTful API with the following endpoints:
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update user profile
 
 ### Boards
+
 - `GET /api/boards` - Get user boards
 - `POST /api/boards` - Create new board
 - `GET /api/boards/:id` - Get board details
@@ -278,11 +304,13 @@ The backend provides a RESTful API with the following endpoints:
 - `DELETE /api/boards/:id` - Delete board
 
 ### Cards & Columns
+
 - `POST /api/boards/:boardId/columns` - Create column
 - `POST /api/boards/:boardId/columns/:columnId/cards` - Create card
 - `PUT /api/boards/:boardId/cards/:cardId/move` - Move card
 
 ### Real-time Events (Socket.IO)
+
 - `board:join` - Join board room
 - `card:update` - Real-time card updates
 - `typing:start/stop` - Typing indicators
@@ -299,6 +327,7 @@ We welcome contributions! Please follow these steps:
 5. Open a Pull Request
 
 ### Development Guidelines
+
 - Follow existing code style and patterns
 - Add tests for new features
 - Update documentation as needed
@@ -311,6 +340,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue in this repository
 - Check the troubleshooting section
 - Review the API documentation

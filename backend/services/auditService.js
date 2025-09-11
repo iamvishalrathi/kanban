@@ -31,7 +31,7 @@ class AuditService {
       }
 
       const auditLog = await AuditLog.create(auditData);
-      
+
       // Emit real-time audit event for admin panel
       const io = global.io;
       if (io) {
@@ -55,10 +55,10 @@ class AuditService {
   }
 
   getClientIP(req) {
-    return req.ip || 
-           req.connection.remoteAddress || 
-           req.socket.remoteAddress ||
-           (req.connection.socket ? req.connection.socket.remoteAddress : null);
+    return req.ip ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      (req.connection.socket ? req.connection.socket.remoteAddress : null);
   }
 
   // Board audit methods
@@ -359,7 +359,7 @@ class AuditService {
     try {
       const offset = (page - 1) * limit;
       const whereClause = { boardId };
-      
+
       if (actions && actions.length > 0) {
         whereClause.action = actions;
       }
@@ -394,15 +394,15 @@ class AuditService {
     try {
       const offset = (page - 1) * limit;
       const whereClause = {};
-      
+
       if (actions && actions.length > 0) {
         whereClause.action = actions;
       }
-      
+
       if (userId) {
         whereClause.userId = userId;
       }
-      
+
       if (dateFrom || dateTo) {
         whereClause.createdAt = {};
         if (dateFrom) whereClause.createdAt[Op.gte] = new Date(dateFrom);
@@ -444,7 +444,7 @@ class AuditService {
     try {
       let dateFrom;
       const now = new Date();
-      
+
       switch (timeRange) {
         case '1d':
           dateFrom = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -480,7 +480,7 @@ class AuditService {
       });
 
       const totalActions = await AuditLog.count({ where: whereClause });
-      
+
       const dailyStats = await AuditLog.findAll({
         where: whereClause,
         attributes: [

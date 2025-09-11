@@ -11,7 +11,7 @@ class MemberController {
       const { boardId } = req.params;
 
       const members = await BoardMember.findAll({
-        where: { 
+        where: {
           boardId,
           isActive: true
         },
@@ -56,7 +56,7 @@ class MemberController {
 
       // Find user by email
       const user = await User.findOne({
-        where: { 
+        where: {
           email: email.toLowerCase(),
           isActive: true
         }

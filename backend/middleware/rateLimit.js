@@ -6,10 +6,10 @@ let authLimiter, apiLimiter, websocketLimiter;
 
 const initializeRateLimiters = async () => {
   const redisClient = redisService.client;
-  
+
   // Use Redis if available, otherwise fall back to memory
-  const limiterOptions = redisService.isConnected 
-    ? { storeClient: redisClient } 
+  const limiterOptions = redisService.isConnected
+    ? { storeClient: redisClient }
     : {};
 
   const LimiterClass = redisService.isConnected ? RateLimiterRedis : RateLimiterMemory;
@@ -46,7 +46,7 @@ const createRateLimitMiddleware = (limiter, keyGenerator = null) => {
   return async (req, res, next) => {
     try {
       const key = keyGenerator ? keyGenerator(req) : req.ip;
-      
+
       await limiter.consume(key);
       next();
     } catch (rejRes) {
@@ -101,8 +101,8 @@ const checkWebSocketRateLimit = async (socket) => {
 
 // Premium rate limiter for paid users (higher limits)
 const createPremiumLimiter = () => {
-  const limiterOptions = redisService.isConnected 
-    ? { storeClient: redisService.client } 
+  const limiterOptions = redisService.isConnected
+    ? { storeClient: redisService.client }
     : {};
 
   const LimiterClass = redisService.isConnected ? RateLimiterRedis : RateLimiterMemory;
@@ -124,7 +124,7 @@ const dynamicRateLimit = async (req, res, next) => {
 
     if (req.user) {
       key = req.userId;
-      
+
       // Use different limits for different user roles
       if (req.user.role === 'admin') {
         // Admins get higher limits
@@ -167,48 +167,48 @@ const createSlidingWindowLimiter = (points, windowSizeMs, key) => {
       const now = Date.now();
       const windowStart = now - windowSizeMs;
       const requestKey = typeof key === 'function' ? key(req) : key;
-      
+
       // Store request timestamps in Redis
       if (redisService.isConnected) {
         const client = redisService.client;
         const redisKey = `sliding:${requestKey}`;
-        
+
         // Remove old entries
         await client.zRemRangeByScore(redisKey, '-inf', windowStart);
-        
+
         // Count current requests in window
         const currentCount = await client.zCard(redisKey);
-        
+
         if (currentCount >= points) {
           const oldestEntry = await client.zRange(redisKey, 0, 0, { withScores: true });
-          const resetTime = oldestEntry.length > 0 ? 
+          const resetTime = oldestEntry.length > 0 ?
             windowStart + windowSizeMs - oldestEntry[0].score : windowSizeMs;
-          
+
           res.set({
             'Retry-After': Math.ceil(resetTime / 1000),
             'X-RateLimit-Limit': points,
             'X-RateLimit-Remaining': 0,
             'X-RateLimit-Reset': new Date(now + resetTime)
           });
-          
+
           return res.status(429).json({
             success: false,
             message: 'Rate limit exceeded',
             retryAfter: Math.ceil(resetTime / 1000)
           });
         }
-        
+
         // Add current request
         await client.zAdd(redisKey, { score: now, value: `${now}:${Math.random()}` });
         await client.expire(redisKey, Math.ceil(windowSizeMs / 1000));
-        
+
         res.set({
           'X-RateLimit-Limit': points,
           'X-RateLimit-Remaining': Math.max(0, points - currentCount - 1),
           'X-RateLimit-Reset': new Date(now + windowSizeMs)
         });
       }
-      
+
       next();
     } catch (error) {
       console.error('Sliding window rate limit error:', error);
