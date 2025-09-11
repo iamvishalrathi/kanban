@@ -123,17 +123,49 @@ SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 The frontend will automatically use the correct backend URL based on the environment. The `vite.config.js` file handles both development and production configurations.
 
 ### Step 2: Deploy to Vercel
+
+#### Option A: Using vercel.json (Automatic - Recommended)
+The project includes a `vercel.json` file that will automatically configure the deployment. Simply:
+
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Click **"New Project"**
 3. Import your GitHub repository
-4. Configure:
-   - **Framework Preset**: Other
-   - **Root Directory**: `./` (leave as root)
-   - **Build Command**: `cd frontend && npm run build`
-   - **Output Directory**: `frontend/dist`
-   - **Install Command**: `cd frontend && npm install`
-   
-   *Note: The vercel.json file will handle the configuration automatically*
+4. Click **"Deploy"** (Vercel will use the vercel.json configuration)
+
+#### Option B: Manual Configuration (If vercel.json doesn't work)
+If you need to configure manually:
+
+1. **Framework Preset**: Vite
+2. **Root Directory**: `frontend`
+3. **Build Command**: `npm run build`
+4. **Output Directory**: `dist`
+5. **Install Command**: `npm install`
+
+#### ⚠️ Build Error Fix
+If you encounter "vite: command not found" error, the project now uses an optimized vercel.json configuration.
+
+**If automatic deployment fails, try manual configuration**:
+
+1. **Delete the current Vercel project and recreate it**
+2. **Use these settings**:
+   - **Root Directory**: `frontend`
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+
+**Alternative: Update vercel.json** (if needed):
+```json
+{
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    }
+  ]
+}
+```
 
 ### Step 3: Set Environment Variables (Optional)
 In Vercel dashboard, add if needed:
@@ -184,17 +216,55 @@ NODE_ENV=production
 
 ### Common Issues:
 
-1. **CORS Errors**: Ensure CORS_ORIGIN matches your Vercel domain exactly
-2. **Database Connection**: Verify DATABASE_URL format and credentials
-3. **Redis Connection**: Check UPSTASH_REDIS_REST_URL and TOKEN are correct
-4. **Build Failures**: Check build logs in Render/Vercel dashboards
-5. **WebSocket Issues**: Free tiers may have WebSocket limitations
-6. **Console Errors**: All development logs have been removed for production
+1. **"vite: command not found" on Vercel**:
+   ```bash
+   # Error: sh: line 1: vite: command not found
+   ```
+   **Solutions**:
+   - Change Root Directory to `frontend` in Vercel settings
+   - Use Framework Preset: `Vite` instead of `Other`
+   - Or update vercel.json to use `npm ci` instead of `npm install`
+   - Clear deployment cache and redeploy
+
+2. **CORS Errors**: Ensure CORS_ORIGIN matches your Vercel domain exactly
+
+3. **Database Connection**: Verify DATABASE_URL format and credentials
+
+4. **Redis Connection**: Check UPSTASH_REDIS_REST_URL and TOKEN are correct
+
+5. **Build Failures**: Check build logs in Render/Vercel dashboards
+
+6. **WebSocket Issues**: Free tiers may have WebSocket limitations
+
+7. **Console Errors**: All development logs have been removed for production
+
+8. **Deprecated Package Warnings**: 
+   ```bash
+   # Warning: react-beautiful-dnd is deprecated
+   ```
+   These are warnings only and won't break the deployment
 
 ### Debug Steps:
+
+#### For Vercel Build Issues:
+1. **Check Build Logs**: Dashboard > Project > Deployments > View Function Logs
+2. **Clear Build Cache**: Dashboard > Project > Settings > Clear Cache
+3. **Try Different Configuration**:
+   - Root Directory: `frontend`
+   - Framework: `Vite`
+   - Build Command: `npm run build`
+   - Install Command: `npm install`
+4. **Test Locally**: 
+   ```bash
+   cd frontend
+   npm install
+   npm run build  # Should work locally
+   ```
+
+#### For Backend Issues:
 1. Check Render logs: Dashboard > Service > Logs
-2. Check Vercel logs: Dashboard > Project > Functions
-3. Test API endpoints: `https://your-render-app.onrender.com/api/health`
+2. Test API endpoints: `https://your-render-app.onrender.com/api/health`
+3. Verify environment variables are set correctly
 
 ## 📊 Free Tier Limitations
 
