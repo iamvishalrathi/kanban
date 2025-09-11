@@ -7,7 +7,7 @@ let authLimiter, apiLimiter, websocketLimiter;
 const initializeRateLimiters = async () => {
   // Check if Redis is available and connected
   const useRedis = redisService.isConnected() && redisService.client;
-  
+
   // Use Redis if available, otherwise fall back to memory
   const limiterOptions = useRedis
     ? { storeClient: redisService.client }
@@ -45,6 +45,12 @@ const initializeRateLimiters = async () => {
 
 const createRateLimitMiddleware = (limiter, keyGenerator = null) => {
   return async (req, res, next) => {
+    // Skip rate limiting if disabled or if Redis is not available in development
+    if (process.env.RATE_LIMIT_ENABLED === 'false' || 
+        (process.env.NODE_ENV === 'development' && !redisService.isConnected())) {
+      return next();
+    }
+
     try {
       const key = keyGenerator ? keyGenerator(req) : req.ip;
 
@@ -247,10 +253,22 @@ const initPromise = initializeRateLimiters().then(() => {
 module.exports = {
   initializeRateLimiters,
   authRateLimit: async (req, res, next) => {
+    // Skip rate limiting if disabled or if Redis is not available in development
+    if (process.env.RATE_LIMIT_ENABLED === 'false' || 
+        (process.env.NODE_ENV === 'development' && !redisService.isConnected())) {
+      return next();
+    }
+    
     await initPromise;
     return createRateLimitMiddleware(authLimiter, (req) => req.body.email || req.ip)(req, res, next);
   },
   apiRateLimit: async (req, res, next) => {
+    // Skip rate limiting if disabled or if Redis is not available in development
+    if (process.env.RATE_LIMIT_ENABLED === 'false' || 
+        (process.env.NODE_ENV === 'development' && !redisService.isConnected())) {
+      return next();
+    }
+    
     await initPromise;
     return createRateLimitMiddleware(apiLimiter, (req) => req.userId || req.ip)(req, res, next);
   },

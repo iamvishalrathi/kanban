@@ -105,7 +105,7 @@ const schemas = {
   // Board schemas
   createBoard: Joi.object({
     title: Joi.string().min(1).max(100).required(),
-    description: Joi.string().max(1000),
+    description: Joi.string().max(1000).allow(''),
     backgroundColor: Joi.string().regex(/^#[0-9A-F]{6}$/i),
     visibility: Joi.string().valid('private', 'team', 'public').default('private'),
     settings: Joi.object({
