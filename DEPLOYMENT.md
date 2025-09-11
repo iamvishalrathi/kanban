@@ -2,7 +2,49 @@
 
 Deploy your Kanban application with **Frontend on Vercel** and **Backend on Render**.
 
-## 📋 Prerequisites
+## � Repository Structure
+
+This project has been optimized with a clean structure:
+
+```
+kanban/
+├── 📁 backend/              # Node.js/Express backend
+│   ├── 📁 config/           # Configuration files
+│   ├── 📁 controllers/      # Route controllers
+│   ├── 📁 middleware/       # Express middleware
+│   ├── 📁 models/           # Database models (Sequelize)
+│   ├── 📁 routes/           # API routes
+│   ├── 📁 socket/           # Socket.IO handlers
+│   ├── 📁 utils/            # Utility functions
+│   ├── .env                 # Backend environment variables
+│   ├── package.json         # Backend dependencies
+│   └── server.js            # Main server file
+│
+├── 📁 frontend/             # React/Vite frontend
+│   ├── 📁 public/           # Static assets
+│   ├── 📁 src/              # React source code
+│   │   ├── 📁 components/   # React components
+│   │   ├── 📁 contexts/     # React contexts (Socket, etc.)
+│   │   ├── 📁 pages/        # Page components
+│   │   └── 📁 services/     # API service functions
+│   ├── package.json         # Frontend dependencies
+│   └── vite.config.js       # Vite configuration
+│
+├── 🚀 deploy.bat            # Windows deployment script
+├── 📋 DEPLOYMENT.md         # This deployment guide
+├── 🐳 Dockerfile            # Docker configuration
+├── 🌐 nginx.conf            # Nginx configuration
+├── 🎯 render.yaml           # Render deployment config
+└── ⚡ vercel.json           # Vercel deployment config
+```
+
+**✅ Cleaned & Production Ready:**
+- Removed SQLite dependencies (now uses PostgreSQL + Supabase)
+- Integrated Upstash Redis for caching and sessions
+- Removed development console logs
+- Optimized for cloud deployment
+
+## �📋 Prerequisites
 
 - [GitHub](https://github.com) account
 - [Vercel](https://vercel.com) account
@@ -21,7 +63,17 @@ Deploy your Kanban application with **Frontend on Vercel** and **Backend on Rend
 1. In Render dashboard, create new PostgreSQL database
 2. Copy the connection string provided
 
-## 🔙 Backend Deployment on Render
+## � Redis Setup (Upstash - Required for Sessions)
+
+### Upstash Redis (Recommended - Free Tier)
+1. Go to [Upstash Console](https://console.upstash.com/)
+2. Create a new Redis database
+3. Copy the **REST URL** and **REST TOKEN** from database details
+4. These will be used for `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+
+*Note: The application now uses Upstash Redis REST API instead of traditional Redis connections for better cloud compatibility.*
+
+## �🔙 Backend Deployment on Render
 
 ### Step 1: Push Code to GitHub
 ```bash
@@ -49,7 +101,8 @@ PORT=10000
 DATABASE_URL=your_database_connection_string_here
 JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters_long
 CORS_ORIGIN=https://your-app-name.vercel.app
-REDIS_ENABLED=false
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 SENDGRID_API_KEY=your_sendgrid_key_optional
 SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 ```
@@ -67,8 +120,7 @@ SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 ## 🎨 Frontend Deployment on Vercel
 
 ### Step 1: Update Frontend Configuration
-1. Open `frontend/vite.config.prod.js`
-2. Replace `your-render-app.onrender.com` with your actual Render URL
+The frontend will automatically use the correct backend URL based on the environment. The `vite.config.js` file handles both development and production configurations.
 
 ### Step 2: Deploy to Vercel
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
@@ -115,7 +167,8 @@ PORT=10000
 DATABASE_URL=postgresql://user:password@host:5432/dbname
 JWT_SECRET=your_32_character_minimum_secret_key
 CORS_ORIGIN=https://your-app.vercel.app
-REDIS_ENABLED=false
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 SENDGRID_API_KEY=optional_sendgrid_key
 SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 RATE_LIMIT_WINDOW_MS=900000
@@ -133,8 +186,10 @@ NODE_ENV=production
 
 1. **CORS Errors**: Ensure CORS_ORIGIN matches your Vercel domain exactly
 2. **Database Connection**: Verify DATABASE_URL format and credentials
-3. **Build Failures**: Check build logs in Render/Vercel dashboards
-4. **WebSocket Issues**: Free tiers may have WebSocket limitations
+3. **Redis Connection**: Check UPSTASH_REDIS_REST_URL and TOKEN are correct
+4. **Build Failures**: Check build logs in Render/Vercel dashboards
+5. **WebSocket Issues**: Free tiers may have WebSocket limitations
+6. **Console Errors**: All development logs have been removed for production
 
 ### Debug Steps:
 1. Check Render logs: Dashboard > Service > Logs
@@ -155,14 +210,15 @@ NODE_ENV=production
 
 ## 🚀 Going Live Checklist
 
-- [ ] Database created and accessible
-- [ ] Backend deployed on Render
-- [ ] Environment variables configured
-- [ ] Frontend deployed on Vercel
-- [ ] CORS origin updated
-- [ ] User registration/login working
-- [ ] Real-time features functional
-- [ ] Custom domain configured (optional)
+- [ ] **Database**: PostgreSQL database created (Supabase/Render)
+- [ ] **Redis**: Upstash Redis database created and configured
+- [ ] **Backend**: Deployed on Render with all environment variables
+- [ ] **Frontend**: Deployed on Vercel with clean build
+- [ ] **CORS**: Origin updated to match Vercel domain
+- [ ] **Testing**: User registration/login working
+- [ ] **Real-time**: Socket.IO features functional
+- [ ] **Performance**: No console logs in production
+- [ ] **Optional**: Custom domain configured
 
 ## 📞 Support
 
