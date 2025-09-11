@@ -75,11 +75,13 @@ SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 2. Click **"New Project"**
 3. Import your GitHub repository
 4. Configure:
-   - **Framework Preset**: Vite
+   - **Framework Preset**: Other
    - **Root Directory**: `./` (leave as root)
    - **Build Command**: `cd frontend && npm run build`
    - **Output Directory**: `frontend/dist`
    - **Install Command**: `cd frontend && npm install`
+   
+   *Note: The vercel.json file will handle the configuration automatically*
 
 ### Step 3: Set Environment Variables (Optional)
 In Vercel dashboard, add if needed:
