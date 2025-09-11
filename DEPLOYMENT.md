@@ -141,31 +141,27 @@ If you need to configure manually:
 4. **Output Directory**: `dist`
 5. **Install Command**: `npm install`
 
-#### ⚠️ Build Error Fix
-If you encounter "vite: command not found" error, the project now uses an optimized vercel.json configuration.
+#### ⚠️ Build & 404 Error Fix
 
-**If automatic deployment fails, try manual configuration**:
+**Problem**: "vite: command not found" and "404 NOT_FOUND" errors
 
-1. **Delete the current Vercel project and recreate it**
-2. **Use these settings**:
-   - **Root Directory**: `frontend`
-   - **Framework Preset**: `Vite`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+**Solution**: The project now uses a corrected vercel.json configuration that explicitly calls npx vite.
 
-**Alternative: Update vercel.json** (if needed):
-```json
-{
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    }
-  ]
-}
-```
+**If deployment still fails**:
+
+1. **Try Manual Configuration** (Recommended):
+   - **Delete the current Vercel project completely**
+   - **Create new project with these exact settings**:
+     - **Framework Preset**: `Vite`
+     - **Root Directory**: `frontend`  
+     - **Build Command**: `npm run build`
+     - **Output Directory**: `dist`
+     - **Install Command**: `npm install`
+
+2. **Alternative - Override vercel.json**:
+   - Temporarily delete vercel.json from your repo
+   - Deploy with manual settings above
+   - Re-add vercel.json after successful deployment
 
 ### Step 3: Set Environment Variables (Optional)
 In Vercel dashboard, add if needed:
@@ -214,17 +210,46 @@ NODE_ENV=production
 
 ## 🔍 Troubleshooting
 
+### 🚨 Quick Fix for Current Deployment Issue
+
+**If you're seeing "vite: command not found" and "404 NOT_FOUND" errors right now:**
+
+1. **Go to Vercel Dashboard** → Your Project → Settings
+2. **Delete this project completely**
+3. **Create a new project** with these EXACT settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build` 
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+4. **Do NOT use vercel.json** (ignore it for now)
+5. **Deploy**
+
+This should resolve both the build and 404 errors immediately.
+
+---
+
 ### Common Issues:
 
-1. **"vite: command not found" on Vercel**:
+1. **"vite: command not found" + "404 NOT_FOUND" Errors**:
    ```bash
    # Error: sh: line 1: vite: command not found
+   # Error: 404 NOT_FOUND (Code: NOT_FOUND, ID: bom1::xxx)
    ```
-   **Solutions**:
-   - Change Root Directory to `frontend` in Vercel settings
-   - Use Framework Preset: `Vite` instead of `Other`
-   - Or update vercel.json to use `npm ci` instead of `npm install`
-   - Clear deployment cache and redeploy
+   **Root Cause**: Incorrect Vercel configuration for monorepo structure
+   
+   **Step-by-Step Fix**:
+   ```bash
+   # 1. Delete current Vercel project
+   # 2. Create new project with manual settings:
+   ```
+   - **Framework**: `Vite`
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+   
+   **Alternative**: Push updated vercel.json and redeploy
 
 2. **CORS Errors**: Ensure CORS_ORIGIN matches your Vercel domain exactly
 
