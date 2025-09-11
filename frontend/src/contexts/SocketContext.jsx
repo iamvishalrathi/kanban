@@ -28,22 +28,64 @@ export const SocketProvider = ({ children }) => {
       auth: {
         token,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Start with polling, upgrade to websocket
+      upgrade: true,
+      rememberUpgrade: true,
+      timeout: 20000,
+      forceNew: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      maxReconnectionAttempts: 5,
+      randomizationFactor: 0.5,
     })
 
     newSocket.on('connect', () => {
-      console.log('Connected to server')
+      console.log('✅ Connected to server via', newSocket.io.engine.transport.name)
       setConnected(true)
+      
+      // Listen for transport upgrades
+      newSocket.io.engine.on('upgrade', () => {
+        console.log('🔄 Upgraded to', newSocket.io.engine.transport.name)
+      })
     })
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from server')
+    newSocket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from server. Reason:', reason)
       setConnected(false)
     })
 
     newSocket.on('connect_error', (error) => {
-      console.error('Connection error:', error)
+      console.error('🔴 Connection error:', error.message || error)
       setConnected(false)
+      
+      // Show user-friendly error message
+      if (error.message?.includes('timeout')) {
+        toast.error('Connection timeout. Retrying...')
+      } else if (error.message?.includes('Authentication')) {
+        toast.error('Authentication failed. Please login again.')
+      }
+    })
+
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Reconnected after', attemptNumber, 'attempts')
+      setConnected(true)
+      toast.success('Reconnected to server')
+    })
+
+    newSocket.on('reconnect_attempt', (attemptNumber) => {
+      console.log('🔄 Reconnection attempt', attemptNumber)
+    })
+
+    newSocket.on('reconnect_error', (error) => {
+      console.error('🔴 Reconnection error:', error.message || error)
+    })
+
+    newSocket.on('reconnect_failed', () => {
+      console.error('🔴 Failed to reconnect')
+      setConnected(false)
+      toast.error('Failed to reconnect. Please refresh the page.')
     })
 
     // User presence events

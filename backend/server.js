@@ -25,10 +25,15 @@ const io = socketIo(server, {
   cors: {
     origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:3000"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
   },
-  pingTimeout: 60000,
-  pingInterval: 25000
+  pingTimeout: parseInt(process.env.WS_PING_TIMEOUT) || 60000,
+  pingInterval: parseInt(process.env.WS_PING_INTERVAL) || 25000,
+  upgradeTimeout: 30000,
+  allowEIO3: true,
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true
 });
 
 // Initialize socket service

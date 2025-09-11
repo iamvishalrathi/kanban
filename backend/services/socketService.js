@@ -19,6 +19,14 @@ class SocketService {
       this.handleConnection(socket);
     });
 
+    io.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    io.engine.on('connection_error', (err) => {
+      console.error('Socket engine connection error:', err.req, err.code, err.message, err.context);
+    });
+
     return io;
   }
 
@@ -62,6 +70,20 @@ class SocketService {
 
     // Join user to their personal room
     socket.join(`user:${userId}`);
+
+    // Add error handling for socket events
+    socket.on('error', (error) => {
+      console.error(`Socket error for user ${userId}:`, error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
+      this.handleDisconnect(socket);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error(`Socket connect error for user ${userId}:`, error);
+    });
 
     // Handle board joining
     socket.on('join:board', async (data) => {
