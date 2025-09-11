@@ -141,11 +141,20 @@ If you need to configure manually:
 4. **Output Directory**: `dist`
 5. **Install Command**: `npm install`
 
-#### ⚠️ Build & 404 Error Fix
+#### ⚠️ Build & Module Error Fix
 
-**Problem**: "vite: command not found" and "404 NOT_FOUND" errors
+**Problem**: "vite: command not found", "ERR_MODULE_NOT_FOUND", and "404 NOT_FOUND" errors
 
-**Solution**: The project now uses a corrected vercel.json configuration that explicitly calls npx vite.
+**Solution**: The project now uses `npm run build` instead of `npx vite build` to properly resolve dependencies.
+
+**Current vercel.json configuration**:
+```json
+{
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "cd frontend && npm ci"
+}
+```
 
 **If deployment still fails**:
 
@@ -231,25 +240,29 @@ This should resolve both the build and 404 errors immediately.
 
 ### Common Issues:
 
-1. **"vite: command not found" + "404 NOT_FOUND" Errors**:
+1. **Vite Build Errors (Multiple Types)**:
    ```bash
    # Error: sh: line 1: vite: command not found
+   # Error: Cannot find package 'vite' imported from vite.config.js
+   # Error: ERR_MODULE_NOT_FOUND
    # Error: 404 NOT_FOUND (Code: NOT_FOUND, ID: bom1::xxx)
    ```
-   **Root Cause**: Incorrect Vercel configuration for monorepo structure
+   **Root Cause**: Vite dependency resolution issues in Vercel build environment
    
    **Step-by-Step Fix**:
    ```bash
-   # 1. Delete current Vercel project
-   # 2. Create new project with manual settings:
+   # Option 1: Use updated vercel.json (commit & push new version)
+   # Option 2: Manual configuration (delete project, recreate):
    ```
+   
+   **Manual Settings** (if vercel.json fails):
    - **Framework**: `Vite`
    - **Root Directory**: `frontend`
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+   - **Install Command**: `npm ci` (or `npm install`)
    
-   **Alternative**: Push updated vercel.json and redeploy
+   **Key Fix**: Use `npm run build` instead of `npx vite build` to properly resolve Vite dependency
 
 2. **CORS Errors**: Ensure CORS_ORIGIN matches your Vercel domain exactly
 
