@@ -9,8 +9,15 @@ class AuthController {
     try {
       let { username, email, password, firstName, lastName } = req.body;
 
+      console.log('📝 Registration attempt:', { 
+        username, email, 
+        passwordLength: password?.length,
+        firstName, lastName 
+      });
+
       // Validate required fields
       if (!email || !password || !firstName || !lastName) {
+        console.log('❌ Missing required fields');
         return res.status(400).json({
           success: false,
           message: 'All fields are required: email, password, firstName, lastName'

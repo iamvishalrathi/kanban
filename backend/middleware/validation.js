@@ -2,6 +2,8 @@ const Joi = require('joi');
 
 const validate = (schema) => {
   return (req, res, next) => {
+    console.log('🔍 Validating request body:', JSON.stringify(req.body, null, 2));
+
     const { error } = schema.validate(req.body, {
       abortEarly: false,
       allowUnknown: false,
@@ -9,6 +11,7 @@ const validate = (schema) => {
     });
 
     if (error) {
+      console.log('❌ Validation failed:', error.details);
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message
@@ -21,6 +24,7 @@ const validate = (schema) => {
       });
     }
 
+    console.log('✅ Validation passed');
     next();
   };
 };
@@ -79,7 +83,7 @@ const validateQuery = (schema) => {
 const schemas = {
   // User schemas
   register: Joi.object({
-    username: Joi.string().alphanum().min(3).max(50).required(),
+    username: Joi.string().min(3).max(50).pattern(/^[a-zA-Z0-9_]+$/).optional(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).max(255).required(),
     firstName: Joi.string().min(1).max(50).required(),
