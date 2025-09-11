@@ -113,9 +113,9 @@ export const Card = ({ card }) => {
               <div
                 key={assignee.id}
                 className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-medium border border-white"
-                title={`${assignee.firstName} ${assignee.lastName}`}
+                title={`${assignee.firstName || assignee.user?.firstName || 'Unknown'} ${assignee.lastName || assignee.user?.lastName || 'User'}`}
               >
-                {assignee.firstName[0]}{assignee.lastName[0]}
+                {(assignee.firstName || assignee.user?.firstName || 'U')[0]}{(assignee.lastName || assignee.user?.lastName || 'U')[0]}
               </div>
             ))}
             {card.assignees.length > 2 && (

@@ -321,7 +321,7 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
               <form onSubmit={handleSubmitComment(onSubmitComment)} className="mb-6">
                 <div className="flex space-x-3">
                   <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium">
-                    {user?.firstName[0]}{user?.lastName[0]}
+                    {(user?.firstName || 'U')[0]}{(user?.lastName || 'U')[0]}
                   </div>
                   <div className="flex-1">
                     <textarea
@@ -353,7 +353,7 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
                 {cardDetails?.data?.card?.comments?.map((comment) => (
                   <div key={comment.id} className="flex space-x-3">
                     <div className="w-8 h-8 rounded-full bg-secondary-300 flex items-center justify-center text-secondary-600 text-sm font-medium">
-                      {comment.author?.firstName[0]}{comment.author?.lastName[0]}
+                      {(comment.author?.firstName || 'U')[0]}{(comment.author?.lastName || 'U')[0]}
                     </div>
                     <div className="flex-1">
                       <div className="bg-secondary-50 rounded-lg p-3">

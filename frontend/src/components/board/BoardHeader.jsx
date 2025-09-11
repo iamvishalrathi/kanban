@@ -49,9 +49,9 @@ export const BoardHeader = ({ board }) => {
                   <div
                     key={member.id}
                     className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium border-2 border-white"
-                    title={`${member.firstName} ${member.lastName}`}
+                    title={`${member.user?.firstName || member.firstName || 'Unknown'} ${member.user?.lastName || member.lastName || 'User'}`}
                   >
-                    {member.firstName[0]}{member.lastName[0]}
+                    {(member.user?.firstName || member.firstName || 'U')[0]}{(member.user?.lastName || member.lastName || 'U')[0]}
                   </div>
                 ))}
                 {board.members?.length > 3 && (
