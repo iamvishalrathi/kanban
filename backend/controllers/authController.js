@@ -9,15 +9,8 @@ class AuthController {
     try {
       let { username, email, password, firstName, lastName } = req.body;
 
-      console.log('📝 Registration attempt:', { 
-        username, email, 
-        passwordLength: password?.length,
-        firstName, lastName 
-      });
-
       // Validate required fields
       if (!email || !password || !firstName || !lastName) {
-        console.log('❌ Missing required fields');
         return res.status(400).json({
           success: false,
           message: 'All fields are required: email, password, firstName, lastName'
@@ -114,11 +107,8 @@ class AuthController {
     try {
       const { email, password } = req.body;
 
-      console.log('🔐 Login attempt:', { email, passwordLength: password?.length });
-
       // Validate required fields
       if (!email || !password) {
-        console.log('❌ Missing email or password');
         return res.status(400).json({
           success: false,
           message: 'Email and password are required'
@@ -133,10 +123,7 @@ class AuthController {
         }
       });
 
-      console.log('👤 User found:', user ? `${user.email} (ID: ${user.id})` : 'No user found');
-
       if (!user) {
-        console.log('❌ User not found with email:', email.toLowerCase());
         return res.status(401).json({
           success: false,
           message: 'Invalid email or password'
@@ -145,10 +132,8 @@ class AuthController {
 
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
-      console.log('🔑 Password valid:', isPasswordValid);
 
       if (!isPasswordValid) {
-        console.log('❌ Invalid password for user:', user.email);
         return res.status(401).json({
           success: false,
           message: 'Invalid email or password'

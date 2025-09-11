@@ -2,8 +2,6 @@ const Joi = require('joi');
 
 const validate = (schema) => {
   return (req, res, next) => {
-    console.log('🔍 Validating request body:', JSON.stringify(req.body, null, 2));
-
     const { error } = schema.validate(req.body, {
       abortEarly: false,
       allowUnknown: false,
@@ -11,7 +9,6 @@ const validate = (schema) => {
     });
 
     if (error) {
-      console.log('❌ Validation failed:', error.details);
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message
@@ -24,7 +21,6 @@ const validate = (schema) => {
       });
     }
 
-    console.log('✅ Validation passed');
     next();
   };
 };
