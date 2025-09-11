@@ -146,30 +146,19 @@ If you need to configure manually:
 **Current vercel.json configuration**:
 ```json
 {
-  "builds": [
+  "rewrites": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
 ```
 
 **Key Changes**: 
-- Vite and @vitejs/plugin-react moved to dependencies
-- Explicit monorepo build configuration for frontend
+- Simplified vercel.json to only handle SPA routing
+- Let Vercel Project Settings handle the build configuration
+- Vite moved to dependencies for reliable installation
 
 **If deployment still fails**:
 
