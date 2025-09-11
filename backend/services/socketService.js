@@ -78,7 +78,7 @@ class SocketService {
 
     socket.on('disconnect', (reason) => {
       console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
-      this.handleDisconnect(socket);
+      this.handleDisconnection(socket);
     });
 
     socket.on('connect_error', (error) => {

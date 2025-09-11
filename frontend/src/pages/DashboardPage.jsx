@@ -4,10 +4,12 @@ import { useQuery } from 'react-query'
 import { boardApi } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { CreateBoardModal } from '../components/modals/CreateBoardModal'
 import { Plus, Calendar, Users, Clock } from 'lucide-react'
 
 export const DashboardPage = () => {
   const { user, logout } = useAuthStore()
+  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false)
 
   const { data: boards, isLoading, error } = useQuery('boards', boardApi.getBoards, {
     retry: 1,
@@ -75,7 +77,10 @@ export const DashboardPage = () => {
 
         {/* Create Board Button */}
         <div className="mb-6">
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+          <button 
+            onClick={() => setIsCreateBoardModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create New Board
           </button>
@@ -92,7 +97,10 @@ export const DashboardPage = () => {
               <p className="text-secondary-600 mb-6">
                 Get started by creating your first board to organize your projects.
               </p>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+              <button 
+                onClick={() => setIsCreateBoardModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Board
               </button>
@@ -141,6 +149,12 @@ export const DashboardPage = () => {
           </div>
         )}
       </main>
+
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        isOpen={isCreateBoardModalOpen}
+        onClose={() => setIsCreateBoardModalOpen(false)}
+      />
     </div>
   )
 }
