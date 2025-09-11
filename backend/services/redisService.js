@@ -1,4 +1,4 @@
-const redis = require('redis');
+const { Redis } = require('@upstash/redis');
 require('dotenv').config();
 
 class RedisService {
@@ -14,89 +14,43 @@ class RedisService {
       return null;
     }
 
+    // Check if Upstash credentials are available
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      console.log('🟡 Upstash Redis credentials not found - skipping connection');
+      console.log('Please add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to your .env file');
+      return null;
+    }
+
     try {
-      this.client = redis.createClient({
-        url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-        password: process.env.REDIS_PASSWORD,
-        socket: {
-          reconnectStrategy: (retries) => {
-            // Limit retries for free tier to prevent infinite loops
-            if (retries >= 3) {
-              console.log('🛑 Max Redis retries reached, stopping reconnection attempts');
-              return false; // Stop trying to reconnect
-            }
-            const delay = Math.min(retries * 5000, 15000); // 5s, 10s, 15s
-            console.log(`🔄 Redis reconnect attempt ${retries}/3, waiting ${delay}ms`);
-            return delay;
-          },
-          connectTimeout: 15000, // Increased to 15 seconds for slow networks
-          lazyConnect: true, // Don't auto-connect on creation
-          family: 0, // Try both IPv4 and IPv6
-          keepAlive: true,
-          noDelay: true,
-        },
-        // Add retry configuration for commands
-        retryDelayOnFailover: 500,
-        maxRetriesPerRequest: 3,
-        retryDelayOnClusterDown: 300,
-        retryDelayOnFailover: 500,
-        enableReadyCheck: false,
-        lazyConnect: true,
+      console.log('🔄 Connecting to Upstash Redis...');
+      this.client = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
-
-      // Suppress repetitive socket error logs
-      this.client.on('error', (err) => {
-        if (err.message.includes('SocketClosedUnexpectedlyError')) {
-          // Only log every 10th socket error to reduce noise
-          if (!this.socketErrorCount) this.socketErrorCount = 0;
-          this.socketErrorCount++;
-          if (this.socketErrorCount % 10 === 1) {
-            console.warn(`🟡 Redis socket disconnected (${this.socketErrorCount} times) - this is normal for free tier`);
-          }
-        } else {
-          console.error('🔴 Redis Client Error:', err.message);
-        }
-        this._isConnected = false;
-      });
-
-      this.client.on('connect', () => {
-        console.log('🟢 Redis Client Connected');
+      
+      // Test the connection
+      await this.client.set('test:connection', 'success');
+      const result = await this.client.get('test:connection');
+      await this.client.del('test:connection');
+      
+      if (result === 'success') {
         this._isConnected = true;
-        this.socketErrorCount = 0; // Reset error count on successful connection
-      });
-
-      this.client.on('ready', () => {
-        console.log('✅ Redis Client Ready');
-        this._isConnected = true;
-      });
-
-      this.client.on('end', () => {
-        console.log('🔴 Redis Client Disconnected');
-        this._isConnected = false;
-      });
-
-      // Add connection timeout with better error handling
-      const connectPromise = this.client.connect();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Redis connection timeout after 8 seconds')), 8000);
-      });
-
-      await Promise.race([connectPromise, timeoutPromise]);
-      console.log('🎉 Redis connection established successfully');
-      return this.client;
+        console.log('✅ Connected to Upstash Redis');
+        return this.client;
+      } else {
+        throw new Error('Connection test failed');
+      }
     } catch (error) {
-      console.error('🔴 Failed to connect to Redis:', error.message);
+      console.error('🔴 Failed to connect to Upstash Redis:', error.message);
       this._isConnected = false;
-      // For free tier, connection failures are common - allow server to continue
       console.log('🟡 Server will continue without Redis (some features may be limited)');
       return null;
     }
   }
 
   async disconnect() {
-    if (this.client) {
-      await this.client.quit();
-    }
+    // Upstash Redis doesn't need explicit disconnection (it's REST-based)
+    this._isConnected = false;
   }
 
   // Get Redis client instance
@@ -109,7 +63,7 @@ class RedisService {
     if (process.env.REDIS_ENABLED === 'false') {
       return false;
     }
-    return this._isConnected && this.client && this.client.isReady;
+    return this._isConnected && this.client;
   }
 
   // Presence Management
@@ -123,8 +77,8 @@ class RedisService {
         lastSeen: Date.now()
       });
 
-      await this.client.hSet(key, userId, value);
-      await this.client.expire(key, 3600); // 1 hour TTL
+      await this.client.hset(key, { [userId]: value });
+      await this.client.expire(key, 3600);
     } catch (error) {
       console.warn('Redis setUserPresence failed:', error.message);
     }
@@ -135,7 +89,7 @@ class RedisService {
       if (!this.isConnected()) return;
 
       const key = `presence:${boardId}`;
-      await this.client.hDel(key, userId);
+      await this.client.hdel(key, userId);
     } catch (error) {
       console.warn('Redis removeUserPresence failed:', error.message);
     }
@@ -146,7 +100,7 @@ class RedisService {
       if (!this.isConnected()) return {};
 
       const key = `presence:${boardId}`;
-      const presence = await this.client.hGetAll(key);
+      const presence = await this.client.hgetall(key) || {};
 
       // Parse JSON values and filter out stale entries
       const now = Date.now();
@@ -160,11 +114,11 @@ class RedisService {
             activePresence[userId] = parsed;
           } else {
             // Clean up stale entries
-            await this.client.hDel(key, userId);
+            await this.client.hdel(key, userId);
           }
         } catch (error) {
           console.error('Error parsing presence data:', error);
-          await this.client.hDel(key, userId);
+          await this.client.hdel(key, userId);
         }
       }
 
@@ -183,11 +137,9 @@ class RedisService {
       const lockKey = `lock:${resource}`;
       const lockValue = `${userId}:${Date.now()}`;
 
-      const result = await this.client.set(lockKey, lockValue, {
-        PX: ttl,
-        NX: true
-      });
-
+      // Upstash Redis set with NX (not exists) and PX (expire in milliseconds)
+      const result = await this.client.set(lockKey, lockValue, { px: ttl, nx: true });
+      
       return result === 'OK' ? lockValue : null;
     } catch (error) {
       console.warn('Redis acquireLock failed:', error.message);
@@ -200,18 +152,12 @@ class RedisService {
       if (!this.isConnected()) return;
 
       const lockKey = `lock:${resource}`;
-      const script = `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-          return redis.call("del", KEYS[1])
-        else
-          return 0
-        end
-      `;
-
-      await this.client.eval(script, {
-        keys: [lockKey],
-        arguments: [lockValue]
-      });
+      
+      // For Upstash, we can use a Lua script or check and delete
+      const currentValue = await this.client.get(lockKey);
+      if (currentValue === lockValue) {
+        await this.client.del(lockKey);
+      }
     } catch (error) {
       console.warn('Redis releaseLock failed:', error.message);
     }
@@ -237,7 +183,7 @@ class RedisService {
 
       const serializedValue = JSON.stringify(value);
       if (ttl) {
-        await this.client.setEx(key, ttl, serializedValue);
+        await this.client.setex(key, ttl, serializedValue);
       } else {
         await this.client.set(key, serializedValue);
       }
@@ -292,10 +238,10 @@ class RedisService {
       const key = `typing:${boardId}:${cardId}`;
 
       if (isTyping) {
-        await this.client.hSet(key, userId, Date.now().toString());
+        await this.client.hset(key, { [userId]: Date.now().toString() });
         await this.client.expire(key, 30); // 30 seconds TTL
       } else {
-        await this.client.hDel(key, userId);
+        await this.client.hdel(key, userId);
       }
     } catch (error) {
       console.warn('Redis setTypingIndicator failed:', error.message);
@@ -307,7 +253,7 @@ class RedisService {
       if (!this.isConnected()) return {};
 
       const key = `typing:${boardId}:${cardId}`;
-      const indicators = await this.client.hGetAll(key);
+      const indicators = await this.client.hgetall(key) || {};
 
       // Filter out stale indicators (older than 10 seconds)
       const now = Date.now();
@@ -317,7 +263,7 @@ class RedisService {
         if (now - parseInt(timestamp) < 10000) {
           activeIndicators[userId] = true;
         } else {
-          await this.client.hDel(key, userId);
+          await this.client.hdel(key, userId);
         }
       }
 
@@ -340,8 +286,8 @@ class RedisService {
         timestamp: Date.now()
       };
 
-      await this.client.lPush(key, JSON.stringify(activity));
-      await this.client.lTrim(key, 0, 99); // Keep last 100 activities
+      await this.client.lpush(key, JSON.stringify(activity));
+      await this.client.ltrim(key, 0, 99); // Keep last 100 activities
       await this.client.expire(key, 86400); // 24 hours TTL
     } catch (error) {
       console.warn('Redis trackBoardActivity failed:', error.message);
@@ -353,7 +299,7 @@ class RedisService {
       if (!this.isConnected()) return [];
 
       const key = `activity:${boardId}`;
-      const activities = await this.client.lRange(key, 0, limit - 1);
+      const activities = await this.client.lrange(key, 0, limit - 1) || [];
 
       return activities.map(activity => {
         try {
@@ -374,28 +320,26 @@ class RedisService {
     try {
       if (!this.isConnected()) return { count: 0, remaining: limit, resetTime: Date.now() + window * 1000 };
 
-      const script = `
-        local current = redis.call("GET", KEYS[1])
-        if current == false then
-          redis.call("SETEX", KEYS[1], ARGV[2], 1)
-          return {1, ARGV[1] - 1, ARGV[2]}
-        else
-          local count = redis.call("INCR", KEYS[1])
-          local ttl = redis.call("TTL", KEYS[1])
-          return {count, ARGV[1] - count, ttl}
-        end
-      `;
-
-      const result = await this.client.eval(script, {
-        keys: [key],
-        arguments: [limit.toString(), window.toString()]
-      });
-
-      return {
-        count: parseInt(result[0]),
-        remaining: Math.max(0, parseInt(result[1])),
-        resetTime: Date.now() + parseInt(result[2]) * 1000
-      };
+      // Simple counter implementation for Upstash
+      const current = await this.client.get(key);
+      
+      if (!current) {
+        await this.client.setex(key, window, "1");
+        return {
+          count: 1,
+          remaining: limit - 1,
+          resetTime: Date.now() + window * 1000
+        };
+      } else {
+        const count = await this.client.incr(key);
+        const ttl = await this.client.ttl(key);
+        
+        return {
+          count: count,
+          remaining: Math.max(0, limit - count),
+          resetTime: Date.now() + ttl * 1000
+        };
+      }
     } catch (error) {
       console.warn('Redis incrementCounter failed:', error.message);
       return { count: 0, remaining: limit, resetTime: Date.now() + window * 1000 };
