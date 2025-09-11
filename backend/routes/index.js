@@ -1,30 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-// Import controllers
-const authController = require('../controllers/authController');
-const boardController = require('../controllers/boardController');
+// Import route modules
+const authRoutes = require('./auth');
+const boardRoutes = require('./boards');
 
-// Auth routes
-router.post('/auth/register', authController.register);
-router.post('/auth/login', authController.login);
-
-// Basic board routes (simplified for now)
-router.get('/boards', (req, res) => {
-  // Return empty boards for now
-  res.json({
-    success: true,
-    data: {
-      boards: [],
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 0,
-        pages: 0
-      }
-    }
-  });
-});
+// Use route modules
+router.use('/auth', authRoutes);
+router.use('/boards', boardRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

@@ -5,14 +5,15 @@ const redisService = require('../services/redisService');
 let authLimiter, apiLimiter, websocketLimiter;
 
 const initializeRateLimiters = async () => {
-  const redisClient = redisService.client;
-
+  // Check if Redis is available and connected
+  const useRedis = redisService.isConnected && redisService.client;
+  
   // Use Redis if available, otherwise fall back to memory
-  const limiterOptions = redisService.isConnected
-    ? { storeClient: redisClient }
+  const limiterOptions = useRedis
+    ? { storeClient: redisService.client }
     : {};
 
-  const LimiterClass = redisService.isConnected ? RateLimiterRedis : RateLimiterMemory;
+  const LimiterClass = useRedis ? RateLimiterRedis : RateLimiterMemory;
 
   // Authentication rate limiter - stricter limits
   authLimiter = new LimiterClass({
