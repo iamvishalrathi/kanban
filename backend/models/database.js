@@ -1,33 +1,19 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Determine database configuration based on environment
-let sequelize;
+// PostgreSQL configuration (Supabase)
+console.log('🐘 Using PostgreSQL database');
 
-if (process.env.DB_DIALECT === 'sqlite' || process.env.DATABASE_URL?.includes('sqlite:')) {
-  // SQLite configuration for local development
-  const storage = process.env.DATABASE_URL?.replace('sqlite:', '') || './dev-database.sqlite';
-  console.log(`🗄️  Using SQLite database: ${storage}`);
+const dbConfig = process.env.DATABASE_URL || {
+  dialect: 'postgres',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+};
 
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: storage,
-    logging: false,
-  });
-} else {
-  // PostgreSQL configuration (Supabase)
-  console.log('🐘 Using PostgreSQL database');
-
-  const dbConfig = process.env.DATABASE_URL || {
-    dialect: 'postgres',
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-  };
-
-  sequelize = new Sequelize(dbConfig, {
+const sequelize = new Sequelize(dbConfig, {
     dialectOptions: {
       ssl: process.env.NODE_ENV === 'production' ? {
         require: true,
@@ -66,6 +52,5 @@ if (process.env.DB_DIALECT === 'sqlite' || process.env.DATABASE_URL?.includes('s
       max: 3
     }
   });
-}
 
 module.exports = sequelize;
