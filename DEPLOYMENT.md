@@ -137,23 +137,39 @@ If you need to configure manually:
 
 #### ⚠️ Build & Module Error Fix
 
-**Problem**: "vite: command not found", "ERR_MODULE_NOT_FOUND", and "404 NOT_FOUND" errors
+**Problem**: "vite: command not found" - Vite was in devDependencies and Vercel only installs production deps by default
 
-**Solution**: The project now directly calls the Vite binary to bypass PATH resolution issues.
+**Solution**: 
+1. **Moved Vite to dependencies** (ensures it's always installed)
+2. **Configured proper monorepo build** in vercel.json
 
 **Current vercel.json configuration**:
 ```json
 {
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
 ```
 
-**Key Change**: Removed all build configuration from vercel.json, forcing manual configuration for reliability
+**Key Changes**: 
+- Vite and @vitejs/plugin-react moved to dependencies
+- Explicit monorepo build configuration for frontend
 
 **If deployment still fails**:
 
@@ -218,21 +234,18 @@ NODE_ENV=production
 
 ## 🔍 Troubleshooting
 
-### 🚨 IMMEDIATE FIX - Persistent Vite Errors
+### ✅ FIXED - Vite Build Issues Resolved!
 
-**The vercel.json approach is having issues. Use MANUAL configuration instead:**
+**Root Cause**: Vite was in `devDependencies` but Vercel only installs production dependencies by default.
 
-1. **Go to Vercel Dashboard** → Your Project → Settings → **Delete Project**
-2. **Create New Project** → Import from GitHub
-3. **Configure MANUALLY** (ignore vercel.json):
-   - **Framework Preset**: `Vite`
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`  
-   - **Install Command**: `npm install`
-4. **Deploy immediately**
+**Solutions Applied**:
+1. **Moved Vite to `dependencies`** in `frontend/package.json`
+2. **Updated vercel.json** with proper monorepo configuration
+3. **Explicit build targeting** the frontend directory
 
-**Critical**: Use the ROOT DIRECTORY setting of `frontend` - this is the key to success!
+**After pushing these changes, your deployment should work automatically!**
+
+If you still have issues, the vercel.json now properly configures the build.
 
 ---
 
