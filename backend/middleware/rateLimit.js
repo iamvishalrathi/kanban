@@ -6,7 +6,7 @@ let authLimiter, apiLimiter, websocketLimiter;
 
 const initializeRateLimiters = async () => {
   // Check if Redis is available and connected
-  const useRedis = redisService.isConnected && redisService.client;
+  const useRedis = redisService.isConnected() && redisService.client;
   
   // Use Redis if available, otherwise fall back to memory
   const limiterOptions = useRedis
@@ -102,11 +102,11 @@ const checkWebSocketRateLimit = async (socket) => {
 
 // Premium rate limiter for paid users (higher limits)
 const createPremiumLimiter = () => {
-  const limiterOptions = redisService.isConnected
+  const limiterOptions = redisService.isConnected()
     ? { storeClient: redisService.client }
     : {};
 
-  const LimiterClass = redisService.isConnected ? RateLimiterRedis : RateLimiterMemory;
+  const LimiterClass = redisService.isConnected() ? RateLimiterRedis : RateLimiterMemory;
 
   return new LimiterClass({
     ...limiterOptions,
@@ -129,8 +129,8 @@ const dynamicRateLimit = async (req, res, next) => {
       // Use different limits for different user roles
       if (req.user.role === 'admin') {
         // Admins get higher limits
-        const adminLimiter = new (redisService.isConnected ? RateLimiterRedis : RateLimiterMemory)({
-          ...(redisService.isConnected ? { storeClient: redisService.client } : {}),
+        const adminLimiter = new (redisService.isConnected() ? RateLimiterRedis : RateLimiterMemory)({
+          ...(redisService.isConnected() ? { storeClient: redisService.client } : {}),
           keyPrefix: 'admin_limiter',
           points: 1000,
           duration: 900,
@@ -170,7 +170,7 @@ const createSlidingWindowLimiter = (points, windowSizeMs, key) => {
       const requestKey = typeof key === 'function' ? key(req) : key;
 
       // Store request timestamps in Redis
-      if (redisService.isConnected) {
+      if (redisService.isConnected() && redisService.client) {
         const client = redisService.client;
         const redisKey = `sliding:${requestKey}`;
 
