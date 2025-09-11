@@ -124,15 +124,9 @@ The frontend will automatically use the correct backend URL based on the environ
 
 ### Step 2: Deploy to Vercel
 
-#### Option A: Using vercel.json (Automatic - Recommended)
-The project includes a `vercel.json` file that will automatically configure the deployment. Simply:
+#### Manual Configuration (Recommended - Most Reliable)
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click **"New Project"**
-3. Import your GitHub repository
-4. Click **"Deploy"** (Vercel will use the vercel.json configuration)
-
-#### Option B: Manual Configuration (If vercel.json doesn't work)
+Due to persistent Vite build issues with vercel.json, use manual configuration:
 If you need to configure manually:
 
 1. **Framework Preset**: Vite
@@ -145,16 +139,21 @@ If you need to configure manually:
 
 **Problem**: "vite: command not found", "ERR_MODULE_NOT_FOUND", and "404 NOT_FOUND" errors
 
-**Solution**: The project now uses `npm run build` instead of `npx vite build` to properly resolve dependencies.
+**Solution**: The project now directly calls the Vite binary to bypass PATH resolution issues.
 
 **Current vercel.json configuration**:
 ```json
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm ci"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
 ```
+
+**Key Change**: Removed all build configuration from vercel.json, forcing manual configuration for reliability
 
 **If deployment still fails**:
 
@@ -219,22 +218,21 @@ NODE_ENV=production
 
 ## 🔍 Troubleshooting
 
-### 🚨 Quick Fix for Current Deployment Issue
+### 🚨 IMMEDIATE FIX - Persistent Vite Errors
 
-**If you're seeing "vite: command not found" and "404 NOT_FOUND" errors right now:**
+**The vercel.json approach is having issues. Use MANUAL configuration instead:**
 
-1. **Go to Vercel Dashboard** → Your Project → Settings
-2. **Delete this project completely**
-3. **Create a new project** with these EXACT settings:
+1. **Go to Vercel Dashboard** → Your Project → Settings → **Delete Project**
+2. **Create New Project** → Import from GitHub
+3. **Configure MANUALLY** (ignore vercel.json):
    - **Framework Preset**: `Vite`
    - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build` 
-   - **Output Directory**: `dist`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`  
    - **Install Command**: `npm install`
-4. **Do NOT use vercel.json** (ignore it for now)
-5. **Deploy**
+4. **Deploy immediately**
 
-This should resolve both the build and 404 errors immediately.
+**Critical**: Use the ROOT DIRECTORY setting of `frontend` - this is the key to success!
 
 ---
 
