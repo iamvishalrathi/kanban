@@ -42,22 +42,19 @@ export const SocketProvider = ({ children }) => {
     })
 
     newSocket.on('connect', () => {
-      console.log('✅ Connected to server via', newSocket.io.engine.transport.name)
       setConnected(true)
       
       // Listen for transport upgrades
       newSocket.io.engine.on('upgrade', () => {
-        console.log('🔄 Upgraded to', newSocket.io.engine.transport.name)
+        // Transport upgraded
       })
     })
 
     newSocket.on('disconnect', (reason) => {
-      console.log('❌ Disconnected from server. Reason:', reason)
       setConnected(false)
     })
 
     newSocket.on('connect_error', (error) => {
-      console.error('🔴 Connection error:', error.message || error)
       setConnected(false)
       
       // Show user-friendly error message
@@ -69,21 +66,19 @@ export const SocketProvider = ({ children }) => {
     })
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Reconnected after', attemptNumber, 'attempts')
       setConnected(true)
       toast.success('Reconnected to server')
     })
 
     newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('🔄 Reconnection attempt', attemptNumber)
+      // Reconnection attempt in progress
     })
 
     newSocket.on('reconnect_error', (error) => {
-      console.error('🔴 Reconnection error:', error.message || error)
+      // Reconnection error occurred
     })
 
     newSocket.on('reconnect_failed', () => {
-      console.error('🔴 Failed to reconnect')
       setConnected(false)
       toast.error('Failed to reconnect. Please refresh the page.')
     })
@@ -136,47 +131,46 @@ export const SocketProvider = ({ children }) => {
     // Real-time updates
     newSocket.on('board:updated', (data) => {
       // Handle board updates
-      console.log('Board updated:', data)
     })
 
     newSocket.on('column:created', (data) => {
-      console.log('Column created:', data)
+      // Column created
     })
 
     newSocket.on('column:updated', (data) => {
-      console.log('Column updated:', data)
+      // Column updated
     })
 
     newSocket.on('column:deleted', (data) => {
-      console.log('Column deleted:', data)
+      // Column deleted
     })
 
     newSocket.on('card:created', (data) => {
-      console.log('Card created:', data)
+      // Card created
     })
 
     newSocket.on('card:updated', (data) => {
-      console.log('Card updated:', data)
+      // Card updated
     })
 
     newSocket.on('card:moved', (data) => {
-      console.log('Card moved:', data)
+      // Card moved
     })
 
     newSocket.on('card:deleted', (data) => {
-      console.log('Card deleted:', data)
+      // Card deleted
     })
 
     newSocket.on('comment:created', (data) => {
-      console.log('Comment created:', data)
+      // Comment created
     })
 
     newSocket.on('comment:updated', (data) => {
-      console.log('Comment updated:', data)
+      // Comment updated
     })
 
     newSocket.on('comment:deleted', (data) => {
-      console.log('Comment deleted:', data)
+      // Comment deleted
     })
 
     // Notification events
@@ -186,7 +180,6 @@ export const SocketProvider = ({ children }) => {
 
     // Error handling
     newSocket.on('error', (error) => {
-      console.error('Socket error:', error)
       toast.error(error.message || 'Socket error occurred')
     })
 
