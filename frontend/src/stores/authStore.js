@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '../services/api'
-import toast from 'react-hot-toast'
+import { getErrorMessage, getErrorType, getFieldError } from '../utils/errorUtils'
+import { authToasts } from '../utils/toastUtils'
 
 export const useAuthStore = create(
   persist(
@@ -24,18 +25,34 @@ export const useAuthStore = create(
               isAuthenticated: true,
               loading: false,
             })
-            toast.success('Login successful!')
+            authToasts.loginSuccess(response.data.user.firstName)
             return { success: true }
           } else {
             set({ loading: false })
-            toast.error(response.message || 'Login failed')
-            return { success: false, message: response.message }
+            const errorMessage = getErrorMessage(response)
+            toast.error(errorMessage, {
+              duration: 6000,
+              icon: '❌',
+            })
+            return { success: false, message: response.message, fieldErrors: response.errors }
           }
         } catch (error) {
           set({ loading: false })
-          const message = error.response?.data?.message || 'Login failed'
-          toast.error(message)
-          return { success: false, message }
+          const errorMessage = getErrorMessage(error)
+          const errorType = getErrorType(error)
+          
+          // Show appropriate toast based on error type
+          toast.error(errorMessage, {
+            duration: errorType === 'network' ? 8000 : 6000,
+            icon: errorType === 'network' ? '🌐' : '❌',
+          })
+          
+          return { 
+            success: false, 
+            message: errorMessage,
+            type: errorType,
+            fieldErrors: error.response?.data?.errors
+          }
         }
       },
 
@@ -51,18 +68,37 @@ export const useAuthStore = create(
               isAuthenticated: true,
               loading: false,
             })
-            toast.success('Registration successful!')
+            toast.success(`Welcome to Kanban, ${response.data.user.firstName}! 🎊`, {
+              duration: 5000,
+              icon: '🚀',
+            })
             return { success: true }
           } else {
             set({ loading: false })
-            toast.error(response.message || 'Registration failed')
-            return { success: false, message: response.message }
+            const errorMessage = getErrorMessage(response)
+            toast.error(errorMessage, {
+              duration: 6000,
+              icon: '❌',
+            })
+            return { success: false, message: response.message, fieldErrors: response.errors }
           }
         } catch (error) {
           set({ loading: false })
-          const message = error.response?.data?.message || 'Registration failed'
-          toast.error(message)
-          return { success: false, message }
+          const errorMessage = getErrorMessage(error)
+          const errorType = getErrorType(error)
+          
+          // Show appropriate toast based on error type
+          toast.error(errorMessage, {
+            duration: errorType === 'network' ? 8000 : 6000,
+            icon: errorType === 'network' ? '🌐' : '❌',
+          })
+          
+          return { 
+            success: false, 
+            message: errorMessage,
+            type: errorType,
+            fieldErrors: error.response?.data?.errors
+          }
         }
       },
 

@@ -6,6 +6,7 @@ import * as yup from 'yup'
 import { useAuthStore } from '../stores/authStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn } from '../utils/cn'
+import { getFieldError } from '../utils/errorUtils'
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -31,13 +32,32 @@ export const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true)
+    
+    // Clear previous errors
+    setError('root', { message: '' })
+    setError('email', { message: '' })
+    setError('password', { message: '' })
+    
     try {
       const result = await login(data)
       if (!result.success) {
-        setError('root', { message: result.message })
+        // Handle field-specific errors
+        if (result.fieldErrors) {
+          result.fieldErrors.forEach(error => {
+            if (error.field === 'email' || error.field === 'password') {
+              setError(error.field, { message: error.message })
+            }
+          })
+        }
+        
+        // If no field-specific errors, show general error
+        if (!result.fieldErrors || result.fieldErrors.length === 0) {
+          setError('root', { message: result.message })
+        }
       }
     } catch (error) {
-      setError('root', { message: 'An error occurred during login' })
+      console.error('Login error:', error)
+      setError('root', { message: 'An unexpected error occurred during login' })
     } finally {
       setIsLoading(false)
     }
@@ -100,9 +120,18 @@ export const LoginPage = () => {
             </div>
           </div>
 
-          {errors.root && (
-            <div className="text-sm text-error-600 text-center">
-              {errors.root.message}
+          {errors.root && errors.root.message && (
+            <div className="rounded-md bg-red-50 border border-red-200 p-3">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-800">{errors.root.message}</p>
+                </div>
+              </div>
             </div>
           )}
 
