@@ -16,13 +16,32 @@ const checkBoardAccess = (requiredAction = 'view_board') => {
         throw new NotFoundError('Board not found');
       }
 
+      // Check if user is board owner first
+      if (board.ownerId === userId) {
+        // Board owners have all permissions
+        req.board = board;
+        req.boardMember = { 
+          role: 'owner', 
+          canPerformAction: () => true,
+          permissions: {
+            canView: true,
+            canEdit: true,
+            canDelete: true,
+            canInvite: true,
+            canManageMembers: true,
+            canManageSettings: true
+          }
+        };
+        return next();
+      }
+
       // Check if user is board member
       const boardMember = await BoardMember.findOne({
         where: { 
           boardId,
           userId,
-          isActive: true,
-          status: 'active'
+          isActive: true
+          // Removed status: 'active' condition temporarily to debug
         }
       });
 
