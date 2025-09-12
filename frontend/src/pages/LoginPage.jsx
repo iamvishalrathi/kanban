@@ -7,6 +7,7 @@ import { useAuthStore } from '../stores/authStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn } from '../utils/cn'
 import { getFieldError } from '../utils/errorUtils'
+import { DebugInfo } from '../components/DebugInfo'
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -31,6 +32,14 @@ export const LoginPage = () => {
   }
 
   const onSubmit = async (data) => {
+    console.log('📝 LoginPage: Form submission started:', {
+      email: data.email,
+      hasPassword: !!data.password,
+      timestamp: new Date().toISOString(),
+      environment: import.meta.env.MODE,
+      userAgent: navigator.userAgent
+    })
+    
     setIsLoading(true)
     
     // Clear previous errors
@@ -39,8 +48,17 @@ export const LoginPage = () => {
     setError('password', { message: '' })
     
     try {
+      console.log('📡 LoginPage: Calling login function...')
       const result = await login(data)
+      console.log('📡 LoginPage: Login function result:', result)
+      
       if (!result.success) {
+        console.log('❌ LoginPage: Login failed:', {
+          message: result.message,
+          fieldErrors: result.fieldErrors,
+          type: result.type
+        })
+        
         // Handle field-specific errors
         if (result.fieldErrors) {
           result.fieldErrors.forEach(error => {
@@ -54,12 +72,19 @@ export const LoginPage = () => {
         if (!result.fieldErrors || result.fieldErrors.length === 0) {
           setError('root', { message: result.message })
         }
+      } else {
+        console.log('✅ LoginPage: Login successful!')
       }
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('💥 LoginPage: Unexpected error during login:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
       setError('root', { message: 'An unexpected error occurred during login' })
     } finally {
       setIsLoading(false)
+      console.log('📝 LoginPage: Form submission ended')
     }
   }
 
@@ -150,6 +175,7 @@ export const LoginPage = () => {
           </div>
         </form>
       </div>
+      <DebugInfo />
     </div>
   )
 }

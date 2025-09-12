@@ -3,12 +3,31 @@ import { useAuthStore } from '../stores/authStore'
 
 // Determine the correct base URL based on environment
 const getBaseURL = () => {
-  // In production, use the environment variable or fallback to Render URL
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://kanban-backend-6fgz.onrender.com'
+  const isProd = import.meta.env.PROD
+  const isDev = import.meta.env.DEV
+  const mode = import.meta.env.MODE
+  const envApiUrl = import.meta.env.VITE_API_URL
+  const fallbackUrl = 'https://kanban-backend-6fgz.onrender.com'
+  
+  console.log('🔧 API Configuration Debug:')
+  console.log('- Environment MODE:', mode)
+  console.log('- Environment PROD:', isProd)
+  console.log('- Environment DEV:', isDev)
+  console.log('- VITE_API_URL from env:', envApiUrl)
+  console.log('- Current hostname:', window.location.hostname)
+  console.log('- Full import.meta.env:', import.meta.env)
+  
+  // Force production URL if we're not on localhost
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  
+  if (!isLocalhost || isProd) {
+    const baseUrl = envApiUrl || fallbackUrl
+    console.log('✅ Production/Remote mode - Using base URL:', baseUrl)
+    return baseUrl
+  } else {
+    console.log('🛠️ Local development mode - Using proxy: /api')
+    return '/api'
   }
-  // In development, use the proxy
-  return '/api'
 }
 
 // Create axios instance
@@ -24,21 +43,48 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token
+    console.log('📤 API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.baseURL + config.url,
+      hasToken: !!token,
+      headers: config.headers
+    })
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
 
 // Response interceptor to handle auth errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    console.log('📥 API Response Success:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    })
+    return response.data
+  },
   (error) => {
+    console.error('📥 API Response Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      message: error.message,
+      response: error.response?.data,
+      headers: error.response?.headers,
+      code: error.code
+    })
+    
     if (error.response?.status === 401) {
+      console.log('🚪 Unauthorized - Clearing auth and redirecting to login')
       useAuthStore.getState().clearAuth()
       window.location.href = '/login'
     }

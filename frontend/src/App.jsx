@@ -17,6 +17,18 @@ function App() {
   const { user, loading, checkAuth } = useAuthStore()
 
   useEffect(() => {
+    // Log environment info on app startup
+    console.log('🚀 Kanban App Starting:', {
+      environment: import.meta.env.MODE,
+      isProd: import.meta.env.PROD,
+      isDev: import.meta.env.DEV,
+      apiUrl: import.meta.env.VITE_API_URL,
+      allEnvVars: import.meta.env,
+      userAgent: navigator.userAgent,
+      hostname: window.location.hostname,
+      origin: window.location.origin
+    })
+    
     checkAuth()
   }, [checkAuth])
 
