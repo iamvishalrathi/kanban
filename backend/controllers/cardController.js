@@ -494,6 +494,108 @@ class CardController {
       });
     }
   }
+
+  // Create card without boardId in URL (for direct card creation)
+  async createDirectCard(req, res) {
+    try {
+      const { title, description, columnId, position, assigneeId, dueDate, priority, labels, estimatedHours, checklist } = req.body;
+
+      // Get the column and its board to verify access
+      const column = await Column.findOne({
+        where: { id: columnId },
+        include: [{
+          model: Board,
+          as: 'board',
+          attributes: ['id', 'title']
+        }]
+      });
+
+      if (!column) {
+        return res.status(404).json({
+          success: false,
+          message: 'Column not found'
+        });
+      }
+
+      // Use the boardId from the column
+      const boardId = column.board.id;
+
+      // If position not provided, add to end
+      let cardPosition = position;
+      if (cardPosition === undefined) {
+        const lastCard = await Card.findOne({
+          where: { columnId },
+          order: [['position', 'DESC']]
+        });
+        cardPosition = lastCard ? lastCard.position + 1 : 0;
+      }
+
+      // Create the card
+      const card = await Card.create({
+        title,
+        description,
+        columnId,
+        boardId,
+        position: cardPosition,
+        assigneeId,
+        dueDate,
+        priority: priority || 'medium',
+        labels: labels || [],
+        estimatedHours,
+        checklist: checklist || [],
+        createdById: req.userId
+      });
+
+      // Fetch the complete card with associations
+      const cardWithAssociations = await Card.findByPk(card.id, {
+        include: [
+          {
+            model: Column,
+            as: 'column',
+            attributes: ['id', 'title']
+          },
+          {
+            model: User,
+            as: 'assignee',
+            attributes: ['id', 'firstName', 'lastName', 'email', 'avatar']
+          },
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'firstName', 'lastName', 'email', 'avatar']
+          }
+        ]
+      });
+
+      // Create audit log
+      await auditService.logCardCreated(cardWithAssociations, req.userId, req);
+
+      // Send notification if assigned to someone else
+      if (assigneeId && assigneeId !== req.userId) {
+        await notificationService.notifyCardAssignment(card.id, assigneeId, req.userId);
+      }
+
+      // Emit real-time update
+      socketService.broadcastCardUpdate(boardId, card.id, 'created', cardWithAssociations);
+
+      // Clear related cache
+      await redisService.del(`cards:board:${boardId}`);
+      await redisService.del(`board:${boardId}`);
+
+      res.status(201).json({
+        success: true,
+        message: 'Card created successfully',
+        card: cardWithAssociations
+      });
+
+    } catch (error) {
+      console.error('Create direct card error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create card'
+      });
+    }
+  }
 }
 
 module.exports = new CardController();

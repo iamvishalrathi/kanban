@@ -151,21 +151,21 @@ const schemas = {
   // Card schemas
   createCard: Joi.object({
     title: Joi.string().min(1).max(200).required(),
-    description: Joi.string().max(5000),
+    description: Joi.string().max(5000).allow('').optional(),
     columnId: Joi.string().uuid().required(),
-    position: Joi.number().integer().min(0),
-    assigneeId: Joi.string().uuid(),
-    dueDate: Joi.date().iso(),
-    priority: Joi.string().valid('low', 'medium', 'high', 'urgent').default('medium'),
+    position: Joi.number().integer().min(0).optional(),
+    assigneeId: Joi.string().uuid().optional(),
+    dueDate: Joi.date().iso().optional(),
+    priority: Joi.string().valid('low', 'medium', 'high', 'urgent').empty('').default('medium'),
     labels: Joi.array().items(Joi.object({
       name: Joi.string().min(1).max(50).required(),
       color: Joi.string().regex(/^#[0-9A-F]{6}$/i).required()
-    })),
-    estimatedHours: Joi.number().precision(2).min(0),
+    })).optional(),
+    estimatedHours: Joi.number().precision(2).min(0).optional(),
     checklist: Joi.array().items(Joi.object({
       text: Joi.string().min(1).max(200).required(),
       completed: Joi.boolean().default(false)
-    }))
+    })).optional()
   }),
 
   updateCard: Joi.object({
@@ -251,6 +251,10 @@ const schemas = {
 
   commentIdParam: Joi.object({
     commentId: Joi.string().uuid().required()
+  }),
+
+  notificationIdParam: Joi.object({
+    notificationId: Joi.string().uuid().required()
   })
 };
 

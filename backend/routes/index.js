@@ -5,12 +5,16 @@ const router = express.Router();
 const authRoutes = require('./auth');
 const boardRoutes = require('./boards');
 const boardMemberRoutes = require('./boardMembers');
+const cardRoutes = require('./cards');
 const templateRoutes = require('./templates');
+const notificationRoutes = require('./notifications');
 
 // Use route modules
 router.use('/auth', authRoutes);
 router.use('/boards', boardRoutes);
 router.use('/boards', boardMemberRoutes);
+router.use('/cards', cardRoutes);
+router.use('/notifications', notificationRoutes);
 router.use('/', templateRoutes);
 
 // Health check
