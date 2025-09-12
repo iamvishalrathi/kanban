@@ -14,11 +14,29 @@ const BoardMember = sequelize.define('BoardMember', {
   permissions: {
     type: DataTypes.JSONB,
     defaultValue: {
+      canView: true,
       canEdit: false,
       canDelete: false,
       canInvite: false,
-      canManageMembers: false
+      canManageMembers: false,
+      canManageSettings: false
     }
+  },
+  invitedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  invitedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'active', 'inactive'),
+    defaultValue: 'pending'
   },
   joinedAt: {
     type: DataTypes.DATE,
@@ -52,8 +70,120 @@ const BoardMember = sequelize.define('BoardMember', {
     { fields: ['userId'] },
     { fields: ['boardId', 'userId'], unique: true },
     { fields: ['role'] },
-    { fields: ['isActive'] }
-  ]
+    { fields: ['isActive'] },
+    { fields: ['status'] }
+  ],
+  hooks: {
+    beforeCreate: (boardMember, options) => {
+      // Set permissions based on role
+      const rolePermissions = {
+        owner: {
+          canView: true,
+          canEdit: true,
+          canDelete: true,
+          canInvite: true,
+          canManageMembers: true,
+          canManageSettings: true
+        },
+        admin: {
+          canView: true,
+          canEdit: true,
+          canDelete: true,
+          canInvite: true,
+          canManageMembers: true,
+          canManageSettings: false
+        },
+        editor: {
+          canView: true,
+          canEdit: true,
+          canDelete: false,
+          canInvite: false,
+          canManageMembers: false,
+          canManageSettings: false
+        },
+        viewer: {
+          canView: true,
+          canEdit: false,
+          canDelete: false,
+          canInvite: false,
+          canManageMembers: false,
+          canManageSettings: false
+        }
+      };
+      
+      boardMember.permissions = rolePermissions[boardMember.role] || rolePermissions.viewer;
+      
+      // Set joinedAt if status is active
+      if (boardMember.status === 'active' && !boardMember.joinedAt) {
+        boardMember.joinedAt = new Date();
+      }
+    },
+    beforeUpdate: (boardMember, options) => {
+      // Update permissions if role changed
+      if (boardMember.changed('role')) {
+        const rolePermissions = {
+          owner: {
+            canView: true,
+            canEdit: true,
+            canDelete: true,
+            canInvite: true,
+            canManageMembers: true,
+            canManageSettings: true
+          },
+          admin: {
+            canView: true,
+            canEdit: true,
+            canDelete: true,
+            canInvite: true,
+            canManageMembers: true,
+            canManageSettings: false
+          },
+          editor: {
+            canView: true,
+            canEdit: true,
+            canDelete: false,
+            canInvite: false,
+            canManageMembers: false,
+            canManageSettings: false
+          },
+          viewer: {
+            canView: true,
+            canEdit: false,
+            canDelete: false,
+            canInvite: false,
+            canManageMembers: false,
+            canManageSettings: false
+          }
+        };
+        
+        boardMember.permissions = rolePermissions[boardMember.role] || rolePermissions.viewer;
+      }
+      
+      // Set joinedAt if status changed to active
+      if (boardMember.changed('status') && boardMember.status === 'active' && !boardMember.joinedAt) {
+        boardMember.joinedAt = new Date();
+      }
+    }
+  }
 });
+
+// Instance methods
+BoardMember.prototype.hasPermission = function(permission) {
+  return this.permissions && this.permissions[permission] === true;
+};
+
+BoardMember.prototype.canPerformAction = function(action) {
+  const actionPermissions = {
+    'view_board': 'canView',
+    'edit_cards': 'canEdit',
+    'delete_cards': 'canDelete',
+    'invite_members': 'canInvite',
+    'manage_members': 'canManageMembers',
+    'manage_settings': 'canManageSettings'
+  };
+  
+  const permission = actionPermissions[action];
+  return permission ? this.hasPermission(permission) : false;
+};
 
 module.exports = BoardMember;

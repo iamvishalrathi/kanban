@@ -345,6 +345,22 @@ class RedisService {
       return { count: 0, remaining: limit, resetTime: Date.now() + window * 1000 };
     }
   }
+
+  // Health check method
+  async ping() {
+    try {
+      if (!this.client || !this._isConnected) {
+        throw new Error('Redis not connected');
+      }
+      await this.client.set('test:ping', 'pong');
+      const result = await this.client.get('test:ping');
+      await this.client.del('test:ping');
+      return result === 'pong';
+    } catch (error) {
+      console.warn('Redis ping failed:', error.message);
+      return false;
+    }
+  }
 }
 
 module.exports = new RedisService();

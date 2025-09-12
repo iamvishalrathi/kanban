@@ -7,6 +7,7 @@ const BoardMember = require('./BoardMember');
 const Comment = require('./Comment');
 const AuditLog = require('./AuditLog');
 const Notification = require('./Notification');
+const Template = require('./Template');
 
 // Define associations
 // User associations
@@ -38,8 +39,9 @@ Card.hasMany(Comment, { foreignKey: 'cardId', as: 'comments' });
 Card.hasMany(Notification, { foreignKey: 'cardId', as: 'notifications' });
 
 // BoardMember associations
-BoardMember.belongsTo(Board, { foreignKey: 'boardId', as: 'board' });
-BoardMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+BoardMember.belongsTo(Board, { foreignKey: 'boardId', as: 'Board' });
+BoardMember.belongsTo(User, { foreignKey: 'userId', as: 'User' });
+BoardMember.belongsTo(User, { foreignKey: 'invitedBy', as: 'InvitedBy' });
 
 // Comment associations
 Comment.belongsTo(Card, { foreignKey: 'cardId', as: 'card' });
@@ -57,6 +59,10 @@ Notification.belongsTo(User, { foreignKey: 'triggeredById', as: 'triggeredBy' })
 Notification.belongsTo(Board, { foreignKey: 'boardId', as: 'board' });
 Notification.belongsTo(Card, { foreignKey: 'cardId', as: 'card' });
 
+// Template associations
+Template.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
+User.hasMany(Template, { foreignKey: 'createdById', as: 'templates' });
+
 module.exports = {
   sequelize,
   User,
@@ -66,5 +72,6 @@ module.exports = {
   BoardMember,
   Comment,
   AuditLog,
-  Notification
+  Notification,
+  Template
 };

@@ -195,7 +195,7 @@ async function startServer() {
 
         // Sync database models only if connected
         if (process.env.NODE_ENV === 'development') {
-          await sequelize.sync({ logging: false });
+          await sequelize.sync({ alter: true, logging: false });
           console.log('✅ Database synchronized');
         }
 

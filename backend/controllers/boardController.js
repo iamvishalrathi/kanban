@@ -46,7 +46,7 @@ class BoardController {
             include: [
               {
                 model: User,
-                as: 'user',
+                as: 'User',
                 attributes: ['id', 'firstName', 'lastName', 'avatar']
               }
             ]
@@ -128,7 +128,7 @@ class BoardController {
               include: [
                 {
                   model: User,
-                  as: 'user',
+                  as: 'User',
                   attributes: ['id', 'firstName', 'lastName', 'avatar']
                 }
               ]
@@ -523,7 +523,7 @@ class BoardController {
             include: [
               {
                 model: User,
-                as: 'user',
+                as: 'User',
                 attributes: ['id', 'firstName', 'lastName', 'email']
               }
             ]

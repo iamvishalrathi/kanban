@@ -250,6 +250,167 @@ class EmailService {
 
     return await this.sendEmail(user.email, subject, html);
   }
+
+  // Comment mention notification
+  async sendCommentMentionEmail(mentionedUser, comment, card, board, author) {
+    const subject = `You were mentioned in a comment on "${card.title}"`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #7c3aed;">You were mentioned!</h2>
+        <p>Hello ${mentionedUser.firstName},</p>
+        <p>${author.firstName} ${author.lastName} mentioned you in a comment on the card "${card.title}" in the "${board.title}" board.</p>
+        
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+          <h4 style="margin-top: 0; color: #374151;">Comment:</h4>
+          <p style="color: #6b7280; font-style: italic;">"${comment.content}"</p>
+          <p style="margin-bottom: 0; font-size: 14px; color: #9ca3af;">
+            — ${author.firstName} ${author.lastName}
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <h4 style="margin-top: 0; color: #374151;">Card: ${card.title}</h4>
+          ${card.description ? `<p style="color: #6b7280; margin-bottom: 0;">${card.description}</p>` : ''}
+        </div>
+        
+        <p>
+          <a href="${process.env.FRONTEND_URL}/boards/${board.id}" 
+             style="background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Card & Reply
+          </a>
+        </p>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          This is an automated message from your Kanban board system.
+        </p>
+      </div>
+    `;
+
+    return await this.sendEmail(mentionedUser.email, subject, html);
+  }
+
+  // New comment notification for card assignee/watchers
+  async sendNewCommentEmail(recipient, comment, card, board, author) {
+    const subject = `New comment on "${card.title}"`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">New Comment Added</h2>
+        <p>Hello ${recipient.firstName},</p>
+        <p>${author.firstName} ${author.lastName} added a comment to the card "${card.title}" in the "${board.title}" board.</p>
+        
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+          <h4 style="margin-top: 0; color: #374151;">Comment:</h4>
+          <p style="color: #6b7280;">${comment.content}</p>
+          <p style="margin-bottom: 0; font-size: 14px; color: #9ca3af;">
+            — ${author.firstName} ${author.lastName}
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <h4 style="margin-top: 0; color: #374151;">Card: ${card.title}</h4>
+          ${card.description ? `<p style="color: #6b7280; margin-bottom: 0;">${card.description}</p>` : ''}
+        </div>
+        
+        <p>
+          <a href="${process.env.FRONTEND_URL}/boards/${board.id}" 
+             style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Card
+          </a>
+        </p>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          This is an automated message from your Kanban board system.
+        </p>
+      </div>
+    `;
+
+    return await this.sendEmail(recipient.email, subject, html);
+  }
+
+  // Board invitation email
+  async sendBoardInvitationEmail(invitedUser, board, invitedBy, role) {
+    const subject = `You've been invited to join "${board.title}"`;
+    
+    const roleDescriptions = {
+      'owner': 'full control over the board',
+      'admin': 'manage members and settings',
+      'editor': 'create and edit cards',
+      'viewer': 'view the board'
+    };
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Board Invitation</h2>
+        <p>Hello ${invitedUser.firstName},</p>
+        <p>${invitedBy.firstName} ${invitedBy.lastName} has invited you to join the "${board.title}" board as a <strong>${role}</strong>.</p>
+        
+        ${board.description ? `
+          <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #374151;">Board Description:</h4>
+            <p style="color: #6b7280; margin-bottom: 0;">${board.description}</p>
+          </div>
+        ` : ''}
+
+        <div style="background: #eff6ff; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2563eb;">
+          <p style="margin: 0; color: #1e40af;">
+            <strong>Your Role:</strong> ${role.charAt(0).toUpperCase() + role.slice(1)} - ${roleDescriptions[role]}
+          </p>
+        </div>
+        
+        <p>
+          <a href="${process.env.FRONTEND_URL}/boards/${board.id}" 
+             style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Accept Invitation
+          </a>
+        </p>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          This invitation will expire in 7 days. If you don't have an account yet, you'll be prompted to create one.
+        </p>
+      </div>
+    `;
+
+    return await this.sendEmail(invitedUser.email, subject, html);
+  }
+
+  // Welcome email for new users
+  async sendWelcomeEmail(user) {
+    const subject = 'Welcome to Kanban Board!';
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Welcome to Kanban Board! 🎉</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>Welcome to our collaborative Kanban board platform! We're excited to have you on board.</p>
+        
+        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #0369a1;">Getting Started:</h3>
+          <ul style="color: #0369a1; margin-bottom: 0;">
+            <li>Create your first board</li>
+            <li>Add columns to organize your workflow</li>
+            <li>Create cards for your tasks</li>
+            <li>Invite team members to collaborate</li>
+            <li>Use templates to get started quickly</li>
+          </ul>
+        </div>
+        
+        <p>
+          <a href="${process.env.FRONTEND_URL}/dashboard" 
+             style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Get Started
+          </a>
+        </p>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          Need help? Check out our documentation or contact support at support@kanban.com
+        </p>
+      </div>
+    `;
+
+    return await this.sendEmail(user.email, subject, html);
+  }
 }
 
 module.exports = new EmailService();
