@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { userApi } from '../services/api'
+import { authApi } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { ArrowLeft, User, Mail, Shield, Bell, Palette } from 'lucide-react'
@@ -59,7 +59,7 @@ export const ProfilePage = () => {
 
   // Update profile mutation
   const updateProfileMutation = useMutation(
-    (data) => userApi.updateProfile(data),
+    (data) => authApi.updateProfile(data),
     {
       onSuccess: (response) => {
         updateUser(response.data.user)
@@ -78,7 +78,7 @@ export const ProfilePage = () => {
 
   // Change password mutation
   const changePasswordMutation = useMutation(
-    (data) => userApi.changePassword(data),
+    (data) => authApi.changePassword(data),
     {
       onSuccess: () => {
         toast.success('Password changed successfully')

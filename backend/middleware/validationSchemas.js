@@ -189,8 +189,8 @@ const cardSchemas = {
       .withMessage('Due date must be a valid date'),
     body('priority')
       .optional()
-      .isIn(['low', 'medium', 'high'])
-      .withMessage('Priority must be low, medium, or high'),
+      .isIn(['low', 'medium', 'high', 'urgent'])
+      .withMessage('Priority must be low, medium, high, or urgent'),
     body('position')
       .optional()
       .isInt({ min: 0 })
@@ -217,8 +217,8 @@ const cardSchemas = {
       .withMessage('Due date must be a valid date'),
     body('priority')
       .optional()
-      .isIn(['low', 'medium', 'high'])
-      .withMessage('Priority must be low, medium, or high')
+      .isIn(['low', 'medium', 'high', 'urgent'])
+      .withMessage('Priority must be low, medium, high, or urgent')
   ],
   move: [
     param('cardId')

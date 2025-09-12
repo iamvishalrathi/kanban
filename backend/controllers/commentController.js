@@ -65,20 +65,33 @@ class CommentController {
   // Create new comment
   async createComment(req, res) {
     try {
-      const { boardId, cardId } = req.params;
+      const { cardId } = req.params;
       const { content, parentId } = req.body;
+      
+      // Get boardId from checkCardAccess middleware or request params
+      const boardId = req.boardId || req.params.boardId;
+      
+      if (!boardId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Board ID not found'
+        });
+      }
 
-      // Verify card exists and belongs to board
-      const card = await Card.findOne({
-        where: { id: cardId },
-        include: [
-          {
-            model: Column,
-            as: 'column',
-            where: { boardId }
-          }
-        ]
-      });
+      // Use the card from middleware if available, otherwise fetch it
+      let card = req.card;
+      if (!card) {
+        card = await Card.findOne({
+          where: { id: cardId },
+          include: [
+            {
+              model: Column,
+              as: 'column',
+              where: { boardId }
+            }
+          ]
+        });
+      }
 
       if (!card) {
         return res.status(404).json({

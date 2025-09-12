@@ -17,6 +17,8 @@ export const Card = ({ card }) => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
+      case 'urgent':
+        return 'bg-red-700'
       case 'high':
         return 'bg-red-500'
       case 'medium':

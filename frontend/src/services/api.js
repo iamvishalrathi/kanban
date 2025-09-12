@@ -99,25 +99,26 @@ export const authApi = {
   logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword: (data) => api.post('/auth/reset-password', data),
-  searchUsers: (query) => api.get(`/auth/search-users?q=${encodeURIComponent(query)}`),
+  changePassword: (data) => api.put('/auth/password', data),
+  searchUsers: (query) => api.get(`/auth/search?q=${encodeURIComponent(query)}`),
+  refreshToken: () => api.post('/auth/refresh'),
+  deactivateAccount: () => api.delete('/auth/deactivate'),
 }
 
 // Board API
 export const boardApi = {
-  getBoards: () => api.get('/boards'),
+  getBoards: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/boards?${queryString}`)
+  },
   createBoard: (data) => api.post('/boards', data),
   getBoard: (boardId) => api.get(`/boards/${boardId}`),
   updateBoard: (boardId, data) => api.put(`/boards/${boardId}`, data),
   deleteBoard: (boardId) => api.delete(`/boards/${boardId}`),
+  archiveBoard: (boardId) => api.patch(`/boards/${boardId}/archive`),
   duplicateBoard: (boardId) => api.post(`/boards/${boardId}/duplicate`),
   exportBoard: (boardId) => api.get(`/boards/${boardId}/export`),
   getBoardStats: (boardId) => api.get(`/boards/${boardId}/stats`),
-  getBoardActivity: (boardId, params = {}) => {
-    const queryString = new URLSearchParams(params).toString()
-    return api.get(`/boards/${boardId}/activity?${queryString}`)
-  },
 }
 
 // Column API
@@ -135,18 +136,13 @@ export const cardApi = {
   updateCard: (cardId, data) => api.put(`/cards/${cardId}`, data),
   deleteCard: (cardId) => api.delete(`/cards/${cardId}`),
   moveCard: (cardId, data) => api.put(`/cards/${cardId}/move`, data),
-  assignCard: (cardId, data) => api.put(`/cards/${cardId}/assign`, data),
-  unassignCard: (cardId, data) => api.put(`/cards/${cardId}/unassign`, data),
-  duplicateCard: (cardId) => api.post(`/cards/${cardId}/duplicate`),
   getCardHistory: (cardId) => api.get(`/cards/${cardId}/history`),
 }
 
 // Comment API
 export const commentApi = {
   getComments: (cardId) => api.get(`/cards/${cardId}/comments`),
-  createComment: (data) => api.post(`/comments`, data),
-  updateComment: (commentId, data) => api.put(`/comments/${commentId}`, data),
-  deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
+  createComment: (cardId, data) => api.post(`/cards/${cardId}/comments`, data),
 }
 
 // Member API
@@ -166,17 +162,10 @@ export const notificationApi = {
   },
   markAsRead: (notificationId) => api.put(`/notifications/${notificationId}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
-  deleteNotification: (notificationId) => api.delete(`/notifications/${notificationId}`),
   getUnreadCount: () => api.get('/notifications/unread-count'),
 }
 
-// User API  
-export const userApi = {
-  getProfile: () => api.get('/users/profile'),
-  updateProfile: (data) => api.put('/users/profile', data),
-  changePassword: (data) => api.put('/users/change-password', data),
-  deleteAccount: () => api.delete('/users/account'),
-}
+// Note: User profile operations are handled through authApi
 
 // Admin API
 export const adminApi = {

@@ -167,26 +167,34 @@ const checkCardAccess = (action = 'edit') => {
       
       const Card = require('../models/Card');
 
-      // Get card and verify it belongs to the board
+      // First get the card with its column to extract boardId if not provided
       const card = await Card.findOne({
         where: { id: cardId },
         include: [{
           model: require('../models/Column'),
-          where: { boardId }
+          as: 'column'
         }]
       });
 
       if (!card) {
-        throw new NotFoundError('Card not found or not in this board');
+        throw new NotFoundError('Card not found');
+      }
+
+      // Get boardId from parameter or from card's column
+      const effectiveBoardId = boardId || card.column.boardId;
+
+      // Verify card belongs to the expected board if boardId was provided
+      if (boardId && card.column.boardId !== boardId) {
+        throw new NotFoundError('Card not found in this board');
       }
 
       // Check board access first
       const boardMember = await BoardMember.findOne({
         where: { 
-          boardId,
+          boardId: effectiveBoardId,
           userId,
-          isActive: true,
-          status: 'active'
+          isActive: true
+          // Removed status: 'active' condition to match board access logic
         }
       });
 
@@ -210,6 +218,7 @@ const checkCardAccess = (action = 'edit') => {
 
       req.card = card;
       req.boardMember = boardMember;
+      req.boardId = effectiveBoardId; // Add boardId to request for downstream handlers
       next();
     } catch (error) {
       next(error);

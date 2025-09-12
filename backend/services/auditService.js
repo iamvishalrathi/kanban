@@ -181,12 +181,18 @@ class AuditService {
   }
 
   // Card audit methods
-  async logCardCreated(card, userId, req) {
+  async logCardCreated(card, userId, req, explicitBoardId = null) {
+    const boardId = explicitBoardId || card.boardId || card.column?.boardId;
+    
+    if (!boardId) {
+      console.warn('No boardId found for card audit log:', card.id);
+    }
+    
     return this.log({
       action: 'card_created',
       entityType: 'card',
       entityId: card.id,
-      boardId: card.column?.boardId,
+      boardId: boardId,
       userId,
       newValues: {
         title: card.title,

@@ -568,7 +568,7 @@ class CardController {
       });
 
       // Create audit log
-      await auditService.logCardCreated(cardWithAssociations, req.userId, req);
+      await auditService.logCardCreated(cardWithAssociations, req.userId, req, boardId);
 
       // Send notification if assigned to someone else
       if (assigneeId && assigneeId !== req.userId) {

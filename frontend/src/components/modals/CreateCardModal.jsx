@@ -9,10 +9,10 @@ import { X, Calendar, Tag } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 const schema = yup.object({
-  title: yup.string().required('Title is required').min(1, 'Title cannot be empty'),
-  description: yup.string(),
+  title: yup.string().required('Title is required').min(1, 'Title cannot be empty').max(200, 'Title must be less than 200 characters'),
+  description: yup.string().max(2000, 'Description must be less than 2000 characters'),
   dueDate: yup.date().nullable(),
-  priority: yup.string().oneOf(['low', 'medium', 'high', '']),
+  priority: yup.string().oneOf(['low', 'medium', 'high', 'urgent', '']),
 })
 
 export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess }) => {
@@ -147,6 +147,7 @@ export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess 
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
+                <option value="urgent">Urgent</option>
               </select>
               {errors.priority && (
                 <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>

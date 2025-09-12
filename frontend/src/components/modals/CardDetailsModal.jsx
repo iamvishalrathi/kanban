@@ -108,7 +108,7 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
 
   // Add comment mutation
   const addCommentMutation = useMutation(
-    (data) => commentApi.createComment({ ...data, cardId: card.id }),
+    (data) => commentApi.createComment(card.id, data),
     {
       onSuccess: () => {
         toast.success('Comment added successfully')
@@ -151,6 +151,8 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
 
   const getPriorityColor = (priority) => {
     switch (priority) {
+      case 'urgent':
+        return 'bg-red-200 text-red-900'
       case 'high':
         return 'bg-red-100 text-red-800'
       case 'medium':
@@ -249,6 +251,7 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
                       <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
                     </select>
                   </div>
                 </div>
