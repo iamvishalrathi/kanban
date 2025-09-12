@@ -1,9 +1,19 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
+// Determine the correct base URL based on environment
+const getBaseURL = () => {
+  // In production, use the environment variable or fallback to Render URL
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_API_URL || 'https://kanban-backend-6fgz.onrender.com'
+  }
+  // In development, use the proxy
+  return '/api'
+}
+
 // Create axios instance
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
