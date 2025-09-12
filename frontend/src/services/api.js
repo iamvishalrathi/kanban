@@ -15,7 +15,7 @@ const getBaseURL = () => {
   console.log('- Environment DEV:', isDev)
   console.log('- VITE_API_URL from env:', envApiUrl)
   console.log('- Current hostname:', window.location.hostname)
-  console.log('- Full import.meta.env:', import.meta.env)
+  console.log('- Environment keys:', Object.keys(import.meta.env))
   
   // Force production URL if we're not on localhost
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
