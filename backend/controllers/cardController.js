@@ -214,13 +214,13 @@ class CardController {
       const { boardId, cardId } = req.params;
       const updateData = req.body;
 
+      // Get card with its column to find the boardId
       const card = await Card.findOne({
-        where: { id: cardId },
+        where: { id: cardId || req.params.cardId },
         include: [
           {
             model: Column,
-            as: 'column',
-            where: { boardId }
+            as: 'column'
           }
         ]
       });
@@ -231,6 +231,9 @@ class CardController {
           message: 'Card not found'
         });
       }
+
+      // Get boardId from card's column if not provided in params
+      const actualBoardId = boardId || card.column.boardId;
 
       const oldValues = {
         title: card.title,
@@ -272,12 +275,12 @@ class CardController {
       await auditService.logCardUpdated(updatedCard, oldValues, req.userId, req);
 
       // Broadcast to board members
-      socketService.broadcastCardUpdate(boardId, cardId, 'updated', updatedCard);
+      socketService.broadcastCardUpdate(actualBoardId, cardId || req.params.cardId, 'updated', updatedCard);
 
       // Handle assignment notifications
       if (updateData.assigneeId !== undefined && updateData.assigneeId !== oldAssigneeId) {
         if (updateData.assigneeId && updateData.assigneeId !== req.userId) {
-          await notificationService.notifyCardAssignment(cardId, updateData.assigneeId, req.userId);
+          await notificationService.notifyCardAssignment(cardId || req.params.cardId, updateData.assigneeId, req.userId);
         }
         await auditService.logCardAssigned(updatedCard, oldAssigneeId, req.userId, req);
       }
@@ -303,7 +306,7 @@ class CardController {
       const { columnId, position } = req.body;
 
       // Acquire lock for this operation
-      const lockKey = `move_card:${cardId}`;
+      const lockKey = `move_card:${cardId || req.params.cardId}`;
       const lockValue = await redisService.acquireLock(lockKey, req.userId, 10000);
 
       if (!lockValue) {
@@ -314,13 +317,13 @@ class CardController {
       }
 
       try {
+        // Get card with its column to find the boardId
         const card = await Card.findOne({
-          where: { id: cardId },
+          where: { id: cardId || req.params.cardId },
           include: [
             {
               model: Column,
-              as: 'column',
-              where: { boardId }
+              as: 'column'
             }
           ]
         });
@@ -332,9 +335,12 @@ class CardController {
           });
         }
 
+        // Get boardId from card's column if not provided in params
+        const actualBoardId = boardId || card.column.boardId;
+
         // Verify target column belongs to board
         const targetColumn = await Column.findOne({
-          where: { id: columnId, boardId }
+          where: { id: columnId, boardId: actualBoardId }
         });
 
         if (!targetColumn) {
@@ -379,7 +385,7 @@ class CardController {
         });
 
         // Get updated card
-        const updatedCard = await Card.findByPk(cardId, {
+        const updatedCard = await Card.findByPk(cardId || req.params.cardId, {
           include: [
             {
               model: Column,
@@ -397,7 +403,7 @@ class CardController {
         await auditService.logCardMoved(updatedCard, oldColumnId, oldPosition, req.userId, req);
 
         // Broadcast to board members
-        socketService.broadcastCardUpdate(boardId, cardId, 'moved', {
+        socketService.broadcastCardUpdate(actualBoardId, cardId || req.params.cardId, 'moved', {
           card: updatedCard,
           oldColumnId,
           newColumnId: columnId
@@ -406,7 +412,7 @@ class CardController {
         // Send notification if card is assigned
         if (card.assigneeId && card.assigneeId !== req.userId) {
           await notificationService.notifyCardMoved(
-            cardId,
+            cardId || req.params.cardId,
             req.userId,
             oldColumnTitle,
             targetColumn.title
@@ -435,13 +441,13 @@ class CardController {
     try {
       const { boardId, cardId } = req.params;
 
+      // Get card with its column to find the boardId
       const card = await Card.findOne({
-        where: { id: cardId },
+        where: { id: cardId || req.params.cardId },
         include: [
           {
             model: Column,
-            as: 'column',
-            where: { boardId }
+            as: 'column'
           }
         ]
       });
@@ -452,6 +458,9 @@ class CardController {
           message: 'Card not found'
         });
       }
+
+      // Get boardId from card's column if not provided in params
+      const actualBoardId = boardId || card.column.boardId;
 
       if (!req.canDelete && card.createdById !== req.userId) {
         return res.status(403).json({
@@ -477,10 +486,10 @@ class CardController {
       );
 
       // Log audit event
-      await auditService.logCardDeleted(cardId, cardData, boardId, req.userId, req);
+      await auditService.logCardDeleted(cardId || req.params.cardId, cardData, actualBoardId, req.userId, req);
 
       // Broadcast to board members
-      socketService.broadcastCardUpdate(boardId, cardId, 'deleted', { id: cardId });
+      socketService.broadcastCardUpdate(actualBoardId, cardId || req.params.cardId, 'deleted', { id: cardId || req.params.cardId });
 
       res.json({
         success: true,

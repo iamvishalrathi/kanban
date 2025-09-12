@@ -313,6 +313,49 @@ class ColumnController {
       });
     }
   }
+
+  // Bulk reorder columns
+  async reorderColumns(req, res) {
+    try {
+      const { boardId } = req.params;
+      const { columnIds } = req.body;
+
+      if (!req.canEdit) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to reorder columns'
+        });
+      }
+
+      // Update column positions based on the new order
+      const updatePromises = columnIds.map((columnId, index) => 
+        Column.update(
+          { position: index },
+          { where: { id: columnId, boardId } }
+        )
+      );
+
+      await Promise.all(updatePromises);
+
+      // Log audit event
+      await auditService.logColumnsReordered(boardId, columnIds, req.userId, req);
+
+      // Broadcast to board members
+      socketService.broadcastColumnUpdate(boardId, null, 'reordered', { columnIds });
+
+      res.json({
+        success: true,
+        message: 'Columns reordered successfully',
+        data: { columnIds }
+      });
+    } catch (error) {
+      console.error('Reorder columns error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to reorder columns'
+      });
+    }
+  }
 }
 
 module.exports = new ColumnController();

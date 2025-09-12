@@ -180,6 +180,18 @@ class AuditService {
     });
   }
 
+  async logColumnsReordered(boardId, columnIds, userId, req) {
+    return this.log({
+      action: 'columns_reordered',
+      entityType: 'board',
+      entityId: boardId,
+      boardId: boardId,
+      userId,
+      newValues: { columnOrder: columnIds },
+      req
+    });
+  }
+
   // Card audit methods
   async logCardCreated(card, userId, req, explicitBoardId = null) {
     const boardId = explicitBoardId || card.boardId || card.column?.boardId;

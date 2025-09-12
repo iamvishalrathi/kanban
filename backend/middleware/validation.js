@@ -14,6 +14,13 @@ const validate = (schema) => {
         message: detail.message
       }));
 
+      console.log('Validation error details:', {
+        route: req.route?.path || req.path,
+        method: req.method,
+        body: req.body,
+        errors: errors
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -148,6 +155,10 @@ const schemas = {
     position: Joi.number().integer().min(0).required()
   }),
 
+  reorderColumns: Joi.object({
+    columnIds: Joi.array().items(Joi.string().uuid()).min(1).required()
+  }),
+
   // Card schemas
   createCard: Joi.object({
     title: Joi.string().min(1).max(200).required(),
@@ -169,21 +180,22 @@ const schemas = {
   }),
 
   updateCard: Joi.object({
-    title: Joi.string().min(1).max(200),
-    description: Joi.string().max(5000),
-    assigneeId: Joi.string().uuid().allow(null),
-    dueDate: Joi.date().iso().allow(null),
-    priority: Joi.string().valid('low', 'medium', 'high', 'urgent'),
+    title: Joi.string().min(1).max(200).optional(),
+    description: Joi.string().max(5000).allow('').optional(),
+    assigneeId: Joi.string().uuid().allow(null).optional(),
+    dueDate: Joi.date().iso().allow(null).optional(),
+    priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
     labels: Joi.array().items(Joi.object({
       name: Joi.string().min(1).max(50).required(),
       color: Joi.string().regex(/^#[0-9A-F]{6}$/i).required()
-    })),
-    estimatedHours: Joi.number().precision(2).min(0).allow(null),
-    actualHours: Joi.number().precision(2).min(0).allow(null),
+    })).optional(),
+    estimatedHours: Joi.number().precision(2).min(0).allow(null).optional(),
+    actualHours: Joi.number().precision(2).min(0).allow(null).optional(),
     checklist: Joi.array().items(Joi.object({
       text: Joi.string().min(1).max(200).required(),
-      completed: Joi.boolean().default(false)
-    }))
+      completed: Joi.boolean().default(false),
+      id: Joi.string().optional() // Allow id field for existing checklist items
+    })).optional()
   }),
 
   moveCard: Joi.object({

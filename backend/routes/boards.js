@@ -110,6 +110,22 @@ router.delete('/:boardId/columns/:columnId',
   columnController.deleteColumn
 );
 
+// Column reordering
+router.put('/:boardId/columns/:columnId/move',
+  validateParams(schemas.boardIdParam),
+  checkBoardAccess('edit_cards'),
+  validate(schemas.moveColumn),
+  columnController.moveColumn
+);
+
+// Bulk column reorder
+router.put('/:boardId/columns/reorder',
+  validateParams(schemas.boardIdParam),
+  checkBoardAccess('edit_cards'),
+  validate(schemas.reorderColumns),
+  columnController.reorderColumns
+);
+
 // Card routes
 router.get('/:boardId/cards',
   validateParams(schemas.boardIdParam),
