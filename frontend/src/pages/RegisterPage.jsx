@@ -4,72 +4,139 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useAuthStore } from '../stores/authStore'
+import { useToastStore } from '../stores/toastStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { PasswordStrength } from '../components/ui/PasswordStrength'
+import { useFormPersistence } from '../utils/formPersistence'
 import { cn } from '../utils/cn'
-import { getFieldError } from '../utils/errorUtils'
 
 const schema = yup.object({
-  firstName: yup.string().required('First name is required'),
-  lastName: yup.string().required('Last name is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
+  firstName: yup
+    .string()
+    .required('First name is required')
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name must not exceed 50 characters')
+    .matches(/^[a-zA-Z\s-']+$/, 'First name can only contain letters, spaces, hyphens, and apostrophes')
+    .trim(),
+  lastName: yup
+    .string()
+    .required('Last name is required')
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name must not exceed 50 characters')
+    .matches(/^[a-zA-Z\s-']+$/, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
+    .trim(),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address')
+    .max(254, 'Email address is too long')
+    .trim()
+    .lowercase(),
   password: yup
     .string()
+    .required('Password is required')
     .min(8, 'Password must be at least 8 characters')
-    .required('Password is required'),
+    .max(128, 'Password must not exceed 128 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one lowercase letter, one uppercase letter, and one number'
+    ),
   confirmPassword: yup
     .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm password is required'),
+    .required('Please confirm your password')
+    .oneOf([yup.ref('password')], 'Passwords must match'),
 })
 
 export const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { register: registerUser, isAuthenticated } = useAuthStore()
+  const { success, error } = useToastStore()
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid, touchedFields, dirtyFields },
     setError,
+    clearErrors,
+    watch,
+    reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
+    mode: 'onChange', // Validate on change for real-time feedback
+    reValidateMode: 'onChange',
+    shouldFocusError: true, // Focus first field with error
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   })
+
+  // Auto-persist form data (excluding sensitive fields)
+  const { clearSavedData } = useFormPersistence('register', watch, reset, setValue)
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
 
   const onSubmit = async (data) => {
+    // Prevent submission if already loading or form is invalid
+    if (isLoading || !isValid) {
+      return
+    }
+
     setIsLoading(true)
     
-    // Clear previous errors
-    setError('root', { message: '' })
-    setError('email', { message: '' })
-    setError('password', { message: '' })
-    setError('firstName', { message: '' })
-    setError('lastName', { message: '' })
+    // Clear only server errors, keep validation errors
+    clearErrors(['root'])
     
     try {
       const { confirmPassword, ...userData } = data
       const result = await registerUser(userData)
+      
       if (!result.success) {
-        // Handle field-specific errors
-        if (result.fieldErrors) {
-          result.fieldErrors.forEach(error => {
-            if (['email', 'password', 'firstName', 'lastName'].includes(error.field)) {
-              setError(error.field, { message: error.message })
+        // Handle field-specific errors - preserve form values
+        if (result.fieldErrors && Array.isArray(result.fieldErrors)) {
+          result.fieldErrors.forEach(fieldError => {
+            if (['email', 'password', 'firstName', 'lastName'].includes(fieldError.field)) {
+              setError(fieldError.field, { 
+                type: 'server',
+                message: fieldError.message 
+              })
             }
           })
         }
         
-        // If no field-specific errors, show general error
+        // Show toast notification for general errors
+        const errorMessage = result.message || 'Registration failed. Please check your information and try again.'
+        error(errorMessage)
+        
+        // If no field-specific errors, also show in form
         if (!result.fieldErrors || result.fieldErrors.length === 0) {
-          setError('root', { message: result.message })
+          setError('root', { 
+            type: 'server',
+            message: errorMessage
+          })
         }
+        
+        // Important: Don't reset form values on error - they should remain
+      } else {
+        success('Account created successfully! Welcome to the platform.')
+        // Clear saved form data on successful registration
+        clearSavedData()
+        // Success redirect is handled by the auth store
       }
-    } catch (error) {
-      console.error('Registration error:', error)
-      setError('root', { message: 'An unexpected error occurred during registration' })
+    } catch (err) {
+      const errorMessage = 'Network error. Please check your connection and try again.'
+      error(errorMessage)
+      setError('root', { 
+        type: 'network',
+        message: errorMessage
+      })
+      // Important: Don't reset form on network errors - preserve user input
     } finally {
       setIsLoading(false)
     }
@@ -92,98 +159,166 @@ export const RegisterPage = () => {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="sr-only">
+                <label htmlFor="firstName" className="block text-sm font-medium text-secondary-700 mb-1">
                   First name
                 </label>
-                <input
-                  {...register('firstName')}
-                  type="text"
-                  autoComplete="given-name"
-                  className={cn(
-                    'input',
-                    errors.firstName && 'input-error'
+                <div className="relative">
+                  <input
+                    id="firstName"
+                    {...register('firstName')}
+                    type="text"
+                    autoComplete="given-name"
+                    className={cn(
+                      'input',
+                      errors.firstName && 'input-error',
+                      touchedFields.firstName && !errors.firstName && 'border-success-500 focus-visible:ring-success-500'
+                    )}
+                    placeholder="Enter your first name"
+                    aria-invalid={errors.firstName ? 'true' : 'false'}
+                    aria-describedby={errors.firstName ? 'firstName-error' : undefined}
+                  />
+                  {touchedFields.firstName && !errors.firstName && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   )}
-                  placeholder="First name"
-                />
+                </div>
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-error-600">{errors.firstName.message}</p>
+                  <p id="firstName-error" className="mt-1 text-sm text-error-600" role="alert">
+                    {errors.firstName.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label htmlFor="lastName" className="sr-only">
+                <label htmlFor="lastName" className="block text-sm font-medium text-secondary-700 mb-1">
                   Last name
                 </label>
-                <input
-                  {...register('lastName')}
-                  type="text"
-                  autoComplete="family-name"
-                  className={cn(
-                    'input',
-                    errors.lastName && 'input-error'
+                <div className="relative">
+                  <input
+                    id="lastName"
+                    {...register('lastName')}
+                    type="text"
+                    autoComplete="family-name"
+                    className={cn(
+                      'input',
+                      errors.lastName && 'input-error',
+                      touchedFields.lastName && !errors.lastName && 'border-success-500 focus-visible:ring-success-500'
+                    )}
+                    placeholder="Enter your last name"
+                    aria-invalid={errors.lastName ? 'true' : 'false'}
+                    aria-describedby={errors.lastName ? 'lastName-error' : undefined}
+                  />
+                  {touchedFields.lastName && !errors.lastName && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   )}
-                  placeholder="Last name"
-                />
+                </div>
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-error-600">{errors.lastName.message}</p>
+                  <p id="lastName-error" className="mt-1 text-sm text-error-600" role="alert">
+                    {errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-secondary-700 mb-1">
                 Email address
               </label>
-              <input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className={cn(
-                  'input',
-                  errors.email && 'input-error'
+              <div className="relative">
+                <input
+                  id="email"
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  className={cn(
+                    'input',
+                    errors.email && 'input-error',
+                    touchedFields.email && !errors.email && 'border-success-500 focus-visible:ring-success-500'
+                  )}
+                  placeholder="Enter your email address"
+                  aria-invalid={errors.email ? 'true' : 'false'}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                />
+                {touchedFields.email && !errors.email && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 )}
-                placeholder="Email address"
-              />
+              </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-error-600">{errors.email.message}</p>
+                <p id="email-error" className="mt-1 text-sm text-error-600" role="alert">
+                  {errors.email.message}
+                </p>
               )}
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-secondary-700 mb-1">
                 Password
               </label>
-              <input
-                {...register('password')}
-                type="password"
-                autoComplete="new-password"
-                className={cn(
-                  'input',
-                  errors.password && 'input-error'
-                )}
-                placeholder="Password"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  {...register('password')}
+                  type="password"
+                  autoComplete="new-password"
+                  className={cn(
+                    'input',
+                    errors.password && 'input-error'
+                  )}
+                  placeholder="Create a strong password"
+                  aria-invalid={errors.password ? 'true' : 'false'}
+                  aria-describedby={errors.password ? 'password-error' : 'password-strength'}
+                />
+              </div>
+              <PasswordStrength password={watch('password')} />
               {errors.password && (
-                <p className="mt-1 text-sm text-error-600">{errors.password.message}</p>
+                <p id="password-error" className="mt-1 text-sm text-error-600" role="alert">
+                  {errors.password.message}
+                </p>
               )}
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="sr-only">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-secondary-700 mb-1">
                 Confirm Password
               </label>
-              <input
-                {...register('confirmPassword')}
-                type="password"
-                autoComplete="new-password"
-                className={cn(
-                  'input',
-                  errors.confirmPassword && 'input-error'
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  {...register('confirmPassword')}
+                  type="password"
+                  autoComplete="new-password"
+                  className={cn(
+                    'input',
+                    errors.confirmPassword && 'input-error',
+                    touchedFields.confirmPassword && !errors.confirmPassword && watch('password') === watch('confirmPassword') && 'border-success-500 focus-visible:ring-success-500'
+                  )}
+                  placeholder="Confirm your password"
+                  aria-invalid={errors.confirmPassword ? 'true' : 'false'}
+                  aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
+                />
+                {touchedFields.confirmPassword && !errors.confirmPassword && watch('password') === watch('confirmPassword') && watch('confirmPassword') && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 )}
-                placeholder="Confirm password"
-              />
+              </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-error-600">{errors.confirmPassword.message}</p>
+                <p id="confirmPassword-error" className="mt-1 text-sm text-error-600" role="alert">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
           </div>
@@ -206,15 +341,29 @@ export const RegisterPage = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || !isValid}
+              className={cn(
+                "group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:cursor-not-allowed transition-all duration-200",
+                isLoading || !isValid
+                  ? "bg-secondary-400 cursor-not-allowed"
+                  : "bg-primary-600 hover:bg-primary-700 active:bg-primary-800"
+              )}
+              aria-describedby={isLoading ? "loading-message" : undefined}
             >
               {isLoading ? (
-                <LoadingSpinner size="sm" className="border-white border-t-transparent" />
+                <>
+                  <LoadingSpinner size="sm" className="border-white border-t-transparent mr-2" />
+                  <span id="loading-message">Creating account...</span>
+                </>
               ) : (
                 'Create account'
               )}
             </button>
+            {!isValid && Object.keys(errors).length === 0 && (
+              <p className="mt-2 text-xs text-secondary-500 text-center">
+                Please fill in all required fields correctly
+              </p>
+            )}
           </div>
         </form>
       </div>

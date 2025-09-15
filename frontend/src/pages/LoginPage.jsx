@@ -4,87 +4,112 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useAuthStore } from '../stores/authStore'
+import { useToastStore } from '../stores/toastStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { useFormPersistence } from '../utils/formPersistence'
 import { cn } from '../utils/cn'
-import { getFieldError } from '../utils/errorUtils'
-import { DebugInfo } from '../components/DebugInfo'
 
 const schema = yup.object({
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().required('Password is required'),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address')
+    .trim()
+    .lowercase(),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(1, 'Password cannot be empty'),
 })
 
 export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { login, isAuthenticated } = useAuthStore()
+  const { success, error } = useToastStore()
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid, touchedFields, dirtyFields },
     setError,
+    clearErrors,
+    watch,
+    reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
+    mode: 'onChange', // Validate on change for real-time feedback
+    reValidateMode: 'onChange',
+    shouldFocusError: true, // Focus first field with error
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   })
+
+  // Auto-persist form data (excluding sensitive fields)
+  const { clearSavedData } = useFormPersistence('login', watch, reset, setValue)
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
 
   const onSubmit = async (data) => {
-    console.log('📝 LoginPage: Form submission started:', {
-      email: data.email,
-      hasPassword: !!data.password,
-      timestamp: new Date().toISOString(),
-      environment: import.meta.env.MODE,
-      userAgent: navigator.userAgent
-    })
+    // Prevent submission if already loading or form is invalid
+    if (isLoading || !isValid) {
+      return
+    }
     
     setIsLoading(true)
     
-    // Clear previous errors
-    setError('root', { message: '' })
-    setError('email', { message: '' })
-    setError('password', { message: '' })
+    // Clear only server errors, keep validation errors
+    clearErrors(['root'])
     
     try {
-      console.log('📡 LoginPage: Calling login function...')
       const result = await login(data)
-      console.log('📡 LoginPage: Login function result:', result)
       
       if (!result.success) {
-        console.log('❌ LoginPage: Login failed:', {
-          message: result.message,
-          fieldErrors: result.fieldErrors,
-          type: result.type
-        })
-        
-        // Handle field-specific errors
-        if (result.fieldErrors) {
-          result.fieldErrors.forEach(error => {
-            if (error.field === 'email' || error.field === 'password') {
-              setError(error.field, { message: error.message })
+        // Handle field-specific errors - preserve form values
+        if (result.fieldErrors && Array.isArray(result.fieldErrors)) {
+          result.fieldErrors.forEach(fieldError => {
+            if (fieldError.field === 'email' || fieldError.field === 'password') {
+              setError(fieldError.field, { 
+                type: 'server',
+                message: fieldError.message 
+              })
             }
           })
         }
         
-        // If no field-specific errors, show general error
+        // Show toast notification for general errors
+        const errorMessage = result.message || 'Login failed. Please check your credentials and try again.'
+        error(errorMessage)
+        
+        // If no field-specific errors, also show in form
         if (!result.fieldErrors || result.fieldErrors.length === 0) {
-          setError('root', { message: result.message })
+          setError('root', { 
+            type: 'server',
+            message: errorMessage
+          })
         }
+        
+        // Important: Don't reset form values on error - they should remain
       } else {
-        console.log('✅ LoginPage: Login successful!')
+        success('Welcome back! You have been successfully logged in.')
+        // Clear saved form data on successful login
+        clearSavedData()
+        // Success redirect is handled by the auth store
       }
-    } catch (error) {
-      console.error('💥 LoginPage: Unexpected error during login:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
+    } catch (err) {
+      const errorMessage = 'Network error. Please check your connection and try again.'
+      error(errorMessage)
+      setError('root', { 
+        type: 'network',
+        message: errorMessage
       })
-      setError('root', { message: 'An unexpected error occurred during login' })
+      // Important: Don't reset form on network errors - preserve user input
     } finally {
       setIsLoading(false)
-      console.log('📝 LoginPage: Form submission ended')
     }
   }
 
@@ -105,42 +130,72 @@ export const LoginPage = () => {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-secondary-700 mb-1">
                 Email address
               </label>
-              <input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className={cn(
-                  'input',
-                  errors.email && 'input-error'
+              <div className="relative">
+                <input
+                  id="email"
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  className={cn(
+                    'input',
+                    errors.email && 'input-error',
+                    touchedFields.email && !errors.email && 'border-success-500 focus-visible:ring-success-500'
+                  )}
+                  placeholder="Enter your email address"
+                  aria-invalid={errors.email ? 'true' : 'false'}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                />
+                {touchedFields.email && !errors.email && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 )}
-                placeholder="Email address"
-              />
+              </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-error-600">{errors.email.message}</p>
+                <p id="email-error" className="mt-1 text-sm text-error-600" role="alert">
+                  {errors.email.message}
+                </p>
               )}
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-secondary-700 mb-1">
                 Password
               </label>
-              <input
-                {...register('password')}
-                type="password"
-                autoComplete="current-password"
-                className={cn(
-                  'input',
-                  errors.password && 'input-error'
+              <div className="relative">
+                <input
+                  id="password"
+                  {...register('password')}
+                  type="password"
+                  autoComplete="current-password"
+                  className={cn(
+                    'input',
+                    errors.password && 'input-error',
+                    touchedFields.password && !errors.password && 'border-success-500 focus-visible:ring-success-500'
+                  )}
+                  placeholder="Enter your password"
+                  aria-invalid={errors.password ? 'true' : 'false'}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
+                />
+                {touchedFields.password && !errors.password && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 )}
-                placeholder="Password"
-              />
+              </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-error-600">{errors.password.message}</p>
+                <p id="password-error" className="mt-1 text-sm text-error-600" role="alert">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>
@@ -163,11 +218,20 @@ export const LoginPage = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || !isValid}
+              className={cn(
+                "group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:cursor-not-allowed transition-all duration-200",
+                isLoading || !isValid
+                  ? "bg-secondary-400 cursor-not-allowed"
+                  : "bg-primary-600 hover:bg-primary-700 active:bg-primary-800"
+              )}
+              aria-describedby={isLoading ? "loading-message" : undefined}
             >
               {isLoading ? (
-                <LoadingSpinner size="sm" className="border-white border-t-transparent" />
+                <>
+                  <LoadingSpinner size="sm" className="border-white border-t-transparent mr-2" />
+                  <span id="loading-message">Signing in...</span>
+                </>
               ) : (
                 'Sign in'
               )}
@@ -175,7 +239,6 @@ export const LoginPage = () => {
           </div>
         </form>
       </div>
-      <DebugInfo />
     </div>
   )
 }
