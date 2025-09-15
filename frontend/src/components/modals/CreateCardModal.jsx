@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useMutation } from 'react-query'
+import { useMutation, useQuery } from 'react-query'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { cardApi } from '../../services/api'
+import { cardApi, boardApi } from '../../services/api'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
-import { X, Calendar, Tag } from 'lucide-react'
+import { X, Calendar, Tag, User } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 const schema = yup.object({
@@ -13,10 +13,20 @@ const schema = yup.object({
   description: yup.string().max(2000, 'Description must be less than 2000 characters'),
   dueDate: yup.date().nullable(),
   priority: yup.string().oneOf(['low', 'medium', 'high', 'urgent', '']),
+  assigneeId: yup.string().nullable()
 })
 
 export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch board members for assignee selection
+  const { data: membersData } = useQuery(
+    ['board-members', boardId],
+    () => boardApi.getMembers(boardId),
+    {
+      enabled: !!boardId && isOpen,
+    }
+  )
 
   const {
     register,
@@ -30,7 +40,8 @@ export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess 
       title: '',
       description: '',
       dueDate: '',
-      priority: ''
+      priority: '',
+      assigneeId: ''
     }
   })
 
@@ -55,7 +66,8 @@ export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess 
     setIsSubmitting(true)
     const cardData = {
       ...data,
-      dueDate: data.dueDate || null
+      dueDate: data.dueDate || null,
+      assigneeId: data.assigneeId || null
     }
     createCardMutation.mutate(cardData)
   }
@@ -151,6 +163,30 @@ export const CreateCardModal = ({ isOpen, onClose, columnId, boardId, onSuccess 
               </select>
               {errors.priority && (
                 <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>
+              )}
+            </div>
+
+            {/* Assignee */}
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 mb-2">
+                Assignee
+              </label>
+              <div className="relative">
+                <select
+                  {...register('assigneeId')}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Unassigned</option>
+                  {membersData?.data?.members?.map((member) => (
+                    <option key={member.user.id} value={member.user.id}>
+                      {member.user.name} ({member.user.email})
+                    </option>
+                  ))}
+                </select>
+                <User className="absolute right-3 top-2.5 w-4 h-4 text-secondary-400 pointer-events-none" />
+              </div>
+              {errors.assigneeId && (
+                <p className="mt-1 text-sm text-red-600">{errors.assigneeId.message}</p>
               )}
             </div>
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, MoreHorizontal } from 'lucide-react'
 
-export const Column = ({ column, onCreateCard }) => {
+export const Column = ({ column, onCreateCard, onEditColumn, onDeleteColumn }) => {
   const [showMenu, setShowMenu] = useState(false)
 
   return (
@@ -33,14 +33,32 @@ export const Column = ({ column, onCreateCard }) => {
 
             {showMenu && (
               <div className="absolute right-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-secondary-200 py-1 z-20">
-                <button className="w-full text-left px-3 py-2 text-sm text-secondary-700 hover:bg-secondary-50">
+                <button 
+                  onClick={() => {
+                    setShowMenu(false)
+                    onEditColumn(column)
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
+                >
                   Edit Column
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-secondary-700 hover:bg-secondary-50">
+                <button 
+                  onClick={() => {
+                    setShowMenu(false)
+                    onCreateCard()
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
+                >
                   Add Card
                 </button>
                 <hr className="my-1 border-secondary-200" />
-                <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                <button 
+                  onClick={() => {
+                    setShowMenu(false)
+                    onDeleteColumn(column)
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
                   Delete Column
                 </button>
               </div>

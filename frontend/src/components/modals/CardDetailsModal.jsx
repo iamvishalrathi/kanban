@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { cardApi, commentApi } from '../../services/api'
+import { cardApi, commentApi, boardApi } from '../../services/api'
 import { useAuthStore } from '../../stores/authStore'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import {
@@ -25,6 +25,7 @@ const schema = yup.object({
   description: yup.string(),
   dueDate: yup.date().nullable(),
   priority: yup.string().oneOf(['low', 'medium', 'high', '']),
+  assigneeId: yup.string().nullable()
 })
 
 const commentSchema = yup.object({
@@ -56,6 +57,15 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
     resolver: yupResolver(commentSchema)
   })
 
+  // Fetch board members for assignee selection
+  const { data: membersData } = useQuery(
+    ['board-members', boardId],
+    () => boardApi.getMembers(boardId),
+    {
+      enabled: !!boardId && isOpen,
+    }
+  )
+
   // Fetch card details and comments
   const { data: cardDetails, isLoading } = useQuery(
     ['card', card?.id],
@@ -68,7 +78,8 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
           title: cardData.title,
           description: cardData.description || '',
           dueDate: cardData.dueDate ? cardData.dueDate.split('T')[0] : '',
-          priority: cardData.priority || ''
+          priority: cardData.priority || '',
+          assigneeId: cardData.assigneeId || ''
         })
       }
     }
@@ -124,7 +135,8 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
   const onSubmit = (data) => {
     const updateData = {
       ...data,
-      dueDate: data.dueDate || null
+      dueDate: data.dueDate || null,
+      assigneeId: data.assigneeId || null
     }
     updateCardMutation.mutate(updateData)
   }
@@ -254,6 +266,23 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
                       <option value="urgent">Urgent</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Assignee
+                    </label>
+                    <select
+                      {...register('assigneeId')}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {membersData?.data?.members?.map((member) => (
+                        <option key={member.user.id} value={member.user.id}>
+                          {member.user.name} ({member.user.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -301,6 +330,15 @@ export const CardDetailsModal = ({ isOpen, onClose, card, boardId, onSuccess }) 
                       <Tag className="w-4 h-4 text-secondary-600" />
                       <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${getPriorityColor(cardDetails.data.card.priority)}`}>
                         {cardDetails.data.card.priority} Priority
+                      </span>
+                    </div>
+                  )}
+
+                  {cardDetails?.data?.card?.assignee && (
+                    <div className="flex items-center space-x-2 text-sm text-secondary-600">
+                      <User className="w-4 h-4" />
+                      <span>
+                        Assigned to: {cardDetails.data.card.assignee.name}
                       </span>
                     </div>
                   )}
