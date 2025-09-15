@@ -52,7 +52,7 @@ export const RegisterPage = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid, touchedFields, dirtyFields },
+    formState: { errors, isValid, touchedFields },
     setError,
     clearErrors,
     watch,

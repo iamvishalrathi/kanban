@@ -13,7 +13,6 @@ export const FormPersistence = {
       localStorage.setItem(`form_${formKey}`, JSON.stringify(formData))
     } catch (error) {
       // Silently fail if localStorage is not available
-      console.warn('Could not save form data:', error)
     }
   },
 

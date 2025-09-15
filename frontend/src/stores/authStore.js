@@ -15,24 +15,11 @@ export const useAuthStore = create(
 
       // Actions
       login: async (credentials) => {
-        console.log('🔐 Login attempt started:', {
-          email: credentials.email,
-          hasPassword: !!credentials.password,
-          environment: import.meta.env.MODE,
-          apiUrl: import.meta.env.VITE_API_URL
-        })
-        
         try {
           set({ loading: true })
-          console.log('📡 Calling authApi.login...')
           const response = await authApi.login(credentials)
-          console.log('📡 authApi.login response:', response)
 
           if (response.success) {
-            console.log('✅ Login successful:', {
-              user: response.data.user.email,
-              hasToken: !!response.data.token
-            })
             set({
               user: response.data.user,
               token: response.data.token,
@@ -42,7 +29,6 @@ export const useAuthStore = create(
             authToasts.loginSuccess(response.data.user.firstName)
             return { success: true }
           } else {
-            console.log('❌ Login failed - Server returned success:false:', response)
             set({ loading: false })
             const errorMessage = getErrorMessage(response)
             toast.error(errorMessage, {
@@ -52,13 +38,6 @@ export const useAuthStore = create(
             return { success: false, message: response.message, fieldErrors: response.errors }
           }
         } catch (error) {
-          console.error('💥 Login error caught:', {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            code: error.code,
-            stack: error.stack
-          })
           set({ loading: false })
           const errorMessage = getErrorMessage(error)
           const errorType = getErrorType(error)
@@ -79,26 +58,11 @@ export const useAuthStore = create(
       },
 
       register: async (userData) => {
-        console.log('📝 Register attempt started:', {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          hasPassword: !!userData.password,
-          environment: import.meta.env.MODE,
-          apiUrl: import.meta.env.VITE_API_URL
-        })
-        
         try {
           set({ loading: true })
-          console.log('📡 Calling authApi.register...')
           const response = await authApi.register(userData)
-          console.log('📡 authApi.register response:', response)
 
           if (response.success) {
-            console.log('✅ Register successful:', {
-              user: response.data.user.email,
-              hasToken: !!response.data.token
-            })
             set({
               user: response.data.user,
               token: response.data.token,
@@ -111,7 +75,6 @@ export const useAuthStore = create(
             })
             return { success: true }
           } else {
-            console.log('❌ Register failed - Server returned success:false:', response)
             set({ loading: false })
             const errorMessage = getErrorMessage(response)
             toast.error(errorMessage, {
@@ -121,13 +84,6 @@ export const useAuthStore = create(
             return { success: false, message: response.message, fieldErrors: response.errors }
           }
         } catch (error) {
-          console.error('💥 Register error caught:', {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            code: error.code,
-            stack: error.stack
-          })
           set({ loading: false })
           const errorMessage = getErrorMessage(error)
           const errorType = getErrorType(error)
@@ -151,7 +107,7 @@ export const useAuthStore = create(
         try {
           await authApi.logout()
         } catch (error) {
-          console.error('Logout error:', error)
+          // Silent error - logout should always succeed locally
         } finally {
           set({
             user: null,

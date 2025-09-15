@@ -17,7 +17,6 @@ function App() {
   const { user, loading, checkAuth } = useAuthStore()
 
   useEffect(() => {
-    
     checkAuth()
   }, [checkAuth])
 
