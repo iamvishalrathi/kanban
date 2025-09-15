@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { useAuthStore } from './stores/authStore'
 import { SocketProvider } from './contexts/SocketContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { LoadingSpinner } from './components/ui/LoadingSpinner'
 import { ToastContainer } from './components/ui/Toast'
 
 // Pages
@@ -25,7 +24,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary-50">
-        <LoadingSpinner size="lg" />
+        <div className="text-secondary-600">Loading...</div>
       </div>
     )
   }
