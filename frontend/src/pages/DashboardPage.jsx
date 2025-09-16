@@ -1,75 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { boardApi } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { CreateBoardModal } from '../components/modals/CreateBoardModal'
+import { MainLayout } from '../components/layout/MainLayout'
 import { Plus, Calendar, Users, Clock } from 'lucide-react'
 
 export const DashboardPage = () => {
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false)
 
   const { data: boards, isLoading, error } = useQuery('boards', boardApi.getBoards, {
     retry: 1,
   })
 
-  const handleLogout = () => {
-    logout()
-  }
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+      </MainLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-secondary-900 mb-2">
-            Error loading boards
-          </h2>
-          <p className="text-secondary-600">{error.message}</p>
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-secondary-900 mb-2">
+              Error loading boards
+            </h2>
+            <p className="text-secondary-600">{error.message}</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-secondary-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-secondary-900">
-                Kanban Dashboard
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-secondary-600">
-                Welcome, {user?.firstName} {user?.lastName}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-secondary-600 hover:text-secondary-900"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <MainLayout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-secondary-900 mb-2">Your Boards</h2>
+          <h1 className="text-3xl font-bold text-secondary-900 mb-2">Your Boards</h1>
           <p className="text-secondary-600">
             Manage your projects and collaborate with your team
           </p>
@@ -148,13 +124,13 @@ export const DashboardPage = () => {
             ))}
           </div>
         )}
-      </main>
 
-      {/* Create Board Modal */}
-      <CreateBoardModal
-        isOpen={isCreateBoardModalOpen}
-        onClose={() => setIsCreateBoardModalOpen(false)}
-      />
-    </div>
+        {/* Create Board Modal */}
+        <CreateBoardModal
+          isOpen={isCreateBoardModalOpen}
+          onClose={() => setIsCreateBoardModalOpen(false)}
+        />
+      </div>
+    </MainLayout>
   )
 }

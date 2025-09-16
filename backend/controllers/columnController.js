@@ -356,6 +356,256 @@ class ColumnController {
       });
     }
   }
+
+  // Get single column
+  async getColumn(req, res) {
+    try {
+      const { columnId } = req.params;
+
+      const column = await Column.findByPk(columnId, {
+        include: [
+          {
+            model: Card,
+            as: 'cards',
+            order: [['position', 'ASC']]
+          }
+        ]
+      });
+
+      if (!column) {
+        return res.status(404).json({
+          success: false,
+          message: 'Column not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: { column }
+      });
+    } catch (error) {
+      console.error('Get column error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get column'
+      });
+    }
+  }
+
+  // Get cards in column
+  async getColumnCards(req, res) {
+    try {
+      const { columnId } = req.params;
+      const { page = 1, limit = 50 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const cards = await Card.findAndCountAll({
+        where: { columnId },
+        order: [['position', 'ASC']],
+        limit: parseInt(limit),
+        offset
+      });
+
+      res.json({
+        success: true,
+        data: {
+          cards: cards.rows,
+          pagination: {
+            total: cards.count,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            pages: Math.ceil(cards.count / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get column cards error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get column cards'
+      });
+    }
+  }
+
+  // Archive column
+  async archiveColumn(req, res) {
+    try {
+      const { columnId } = req.params;
+
+      if (!req.canEdit) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to archive columns'
+        });
+      }
+
+      const column = await Column.findByPk(columnId);
+      if (!column) {
+        return res.status(404).json({
+          success: false,
+          message: 'Column not found'
+        });
+      }
+
+      await column.update({ isArchived: true });
+
+      // Audit log
+      await auditService.log('COLUMN_ARCHIVED', req.user.id, {
+        columnId: column.id,
+        boardId: column.boardId
+      });
+
+      // Socket notification
+      socketService.notifyBoard(column.boardId, 'columnArchived', {
+        columnId: column.id
+      });
+
+      res.json({
+        success: true,
+        message: 'Column archived successfully'
+      });
+    } catch (error) {
+      console.error('Archive column error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to archive column'
+      });
+    }
+  }
+
+  // Restore archived column
+  async restoreColumn(req, res) {
+    try {
+      const { columnId } = req.params;
+
+      if (!req.canEdit) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to restore columns'
+        });
+      }
+
+      const column = await Column.findByPk(columnId);
+      if (!column) {
+        return res.status(404).json({
+          success: false,
+          message: 'Column not found'
+        });
+      }
+
+      await column.update({ isArchived: false });
+
+      // Audit log
+      await auditService.log('COLUMN_RESTORED', req.user.id, {
+        columnId: column.id,
+        boardId: column.boardId
+      });
+
+      // Socket notification
+      socketService.notifyBoard(column.boardId, 'columnRestored', {
+        columnId: column.id
+      });
+
+      res.json({
+        success: true,
+        message: 'Column restored successfully'
+      });
+    } catch (error) {
+      console.error('Restore column error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to restore column'
+      });
+    }
+  }
+
+  // Duplicate column
+  async duplicateColumn(req, res) {
+    try {
+      const { columnId } = req.params;
+      const { title, includeCards = false } = req.body;
+
+      if (!req.canEdit) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to duplicate columns'
+        });
+      }
+
+      const originalColumn = await Column.findByPk(columnId, {
+        include: includeCards ? [{ model: Card, as: 'cards' }] : []
+      });
+
+      if (!originalColumn) {
+        return res.status(404).json({
+          success: false,
+          message: 'Column not found'
+        });
+      }
+
+      // Get the highest position
+      const maxPosition = await Column.max('position', {
+        where: { boardId: originalColumn.boardId }
+      });
+
+      // Create new column
+      const newColumn = await Column.create({
+        title: title || `${originalColumn.title} (Copy)`,
+        boardId: originalColumn.boardId,
+        position: (maxPosition || 0) + 1,
+        color: originalColumn.color,
+        wipLimit: originalColumn.wipLimit
+      });
+
+      // Duplicate cards if requested
+      if (includeCards && originalColumn.cards) {
+        for (let i = 0; i < originalColumn.cards.length; i++) {
+          const card = originalColumn.cards[i];
+          await Card.create({
+            title: card.title,
+            description: card.description,
+            columnId: newColumn.id,
+            position: i + 1,
+            labels: card.labels,
+            priority: card.priority,
+            assigneeId: card.assigneeId,
+            dueDate: card.dueDate
+          });
+        }
+      }
+
+      // Fetch the complete duplicated column
+      const duplicatedColumn = await Column.findByPk(newColumn.id, {
+        include: [{ model: Card, as: 'cards' }]
+      });
+
+      // Audit log
+      await auditService.log('COLUMN_DUPLICATED', req.user.id, {
+        originalColumnId: columnId,
+        newColumnId: newColumn.id,
+        boardId: originalColumn.boardId,
+        includeCards
+      });
+
+      // Socket notification
+      socketService.notifyBoard(originalColumn.boardId, 'columnDuplicated', {
+        originalColumnId: columnId,
+        newColumn: duplicatedColumn
+      });
+
+      res.status(201).json({
+        success: true,
+        data: { column: duplicatedColumn },
+        message: 'Column duplicated successfully'
+      });
+    } catch (error) {
+      console.error('Duplicate column error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to duplicate column'
+      });
+    }
+  }
 }
 
 module.exports = new ColumnController();

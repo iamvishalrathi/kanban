@@ -255,11 +255,163 @@ const getBoardPermissions = async (userId, boardId) => {
   };
 };
 
+/**
+ * Middleware to check column access
+ */
+const checkColumnAccess = (action = 'view') => {
+  return async (req, res, next) => {
+    try {
+      const { columnId } = req.params;
+      const userId = req.user.id;
+
+      // Get column and its board
+      const { Column } = require('../models');
+      const column = await Column.findByPk(columnId, {
+        include: [{ model: Board, as: 'board' }]
+      });
+
+      if (!column) {
+        throw new NotFoundError('Column not found');
+      }
+
+      // Check board access through the column's board
+      req.params.boardId = column.boardId;
+      req.column = column;
+      
+      return checkBoardAccess('edit_cards')(req, res, next);
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  };
+};
+
+/**
+ * Middleware to require column management permissions
+ */
+const requireColumnManagement = () => {
+  return async (req, res, next) => {
+    if (!req.boardMember || !req.boardMember.permissions.canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to manage columns'
+      });
+    }
+    next();
+  };
+};
+
+/**
+ * Middleware to check comment access
+ */
+const checkCommentAccess = (action = 'view') => {
+  return async (req, res, next) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user.id;
+
+      // Get comment and its card/board
+      const { Comment, Card } = require('../models');
+      const comment = await Comment.findByPk(commentId, {
+        include: [{
+          model: Card,
+          as: 'card',
+          include: [{
+            model: require('../models').Column,
+            as: 'column',
+            include: [{ model: Board, as: 'board' }]
+          }]
+        }]
+      });
+
+      if (!comment) {
+        throw new NotFoundError('Comment not found');
+      }
+
+      // Check board access through the comment's card's board
+      req.params.boardId = comment.card.column.boardId;
+      req.comment = comment;
+      
+      return checkBoardAccess('view_board')(req, res, next);
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  };
+};
+
+/**
+ * Middleware to require comment ownership or admin
+ */
+const requireCommentOwnership = () => {
+  return async (req, res, next) => {
+    const userId = req.user.id;
+    
+    if (req.comment && req.comment.userId === userId) {
+      return next();
+    }
+    
+    // Check if user is board admin/owner
+    if (req.boardMember && req.boardMember.permissions.canManageMembers) {
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'You can only edit your own comments'
+    });
+  };
+};
+
+/**
+ * Middleware to require self or admin access
+ */
+const requireSelfOrAdmin = () => {
+  return (req, res, next) => {
+    const { userId } = req.params;
+    const currentUserId = req.user.id;
+    
+    if (userId === currentUserId || req.user.role === 'admin') {
+      return next();
+    }
+    
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied'
+    });
+  };
+};
+
+/**
+ * Middleware to require admin role
+ */
+const requireAdminRole = () => {
+  return (req, res, next) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+    next();
+  };
+};
+
 module.exports = {
   checkBoardAccess,
   requireBoardOwner,
   requireMemberManagement,
   requireSettingsManagement,
   checkCardAccess,
-  getBoardPermissions
+  getBoardPermissions,
+  checkColumnAccess,
+  requireColumnManagement,
+  checkCommentAccess,
+  requireCommentOwnership,
+  requireSelfOrAdmin,
+  requireAdminRole
 };

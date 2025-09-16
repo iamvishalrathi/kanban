@@ -11,6 +11,12 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { BoardPage } from './pages/BoardPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { AdminDashboard } from './pages/AdminDashboard'
+import { AnalyticsPage } from './pages/AnalyticsPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { TemplatesPage } from './pages/TemplatesPage'
+import { ArchivePage } from './pages/ArchivePage'
+import { PreferencesPage } from './pages/PreferencesPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function App() {
@@ -56,6 +62,54 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute>
+                  <TemplatesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/archive"
+              element={
+                <ProtectedRoute>
+                  <ArchivePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/preferences"
+              element={
+                <ProtectedRoute>
+                  <PreferencesPage />
                 </ProtectedRoute>
               }
             />

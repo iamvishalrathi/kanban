@@ -6,6 +6,9 @@ const authRoutes = require('./auth');
 const boardRoutes = require('./boards');
 const boardMemberRoutes = require('./boardMembers');
 const cardRoutes = require('./cards');
+const columnRoutes = require('./columns');
+const commentRoutes = require('./comments');
+const userRoutes = require('./users');
 const templateRoutes = require('./templates');
 const notificationRoutes = require('./notifications');
 
@@ -14,6 +17,9 @@ router.use('/auth', authRoutes);
 router.use('/boards', boardRoutes);
 router.use('/boards', boardMemberRoutes);
 router.use('/cards', cardRoutes);
+router.use('/columns', columnRoutes);
+router.use('/comments', commentRoutes);
+router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/', templateRoutes);
 

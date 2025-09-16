@@ -85,13 +85,24 @@ export const boardApi = {
   duplicateBoard: (boardId) => api.post(`/boards/${boardId}/duplicate`),
   exportBoard: (boardId) => api.get(`/boards/${boardId}/export`),
   getBoardStats: (boardId) => api.get(`/boards/${boardId}/stats`),
+  uploadBackground: (boardId, file) => {
+    const formData = new FormData();
+    formData.append('background', file);
+    return api.post(`/boards/${boardId}/background`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  deleteBackground: (boardId) => api.delete(`/boards/${boardId}/background`),
 }
 
 // Column API
 export const columnApi = {
-  createColumn: (boardId, data) => api.post(`/boards/${boardId}/columns`, data),
-  updateColumn: (boardId, columnId, data) => api.put(`/boards/${boardId}/columns/${columnId}`, data),
-  deleteColumn: (boardId, columnId) => api.delete(`/boards/${boardId}/columns/${columnId}`),
+  createColumn: (data) => api.post(`/boards/${data.boardId}/columns`, data),
+  getColumn: (columnId) => api.get(`/columns/${columnId}`),
+  updateColumn: (columnId, data) => api.put(`/columns/${columnId}`, data),
+  deleteColumn: (columnId) => api.delete(`/columns/${columnId}`),
+  archiveColumn: (columnId) => api.put(`/columns/${columnId}/archive`),
+  duplicateColumn: (columnId, data) => api.post(`/columns/${columnId}/duplicate`, data),
   reorderColumns: (boardId, data) => api.put(`/boards/${boardId}/columns/reorder`, data),
 }
 
@@ -107,8 +118,29 @@ export const cardApi = {
 
 // Comment API
 export const commentApi = {
-  getComments: (cardId) => api.get(`/cards/${cardId}/comments`),
+  getComments: (cardId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/cards/${cardId}/comments?${queryString}`)
+  },
   createComment: (cardId, data) => api.post(`/cards/${cardId}/comments`, data),
+  updateComment: (commentId, data) => api.put(`/comments/${commentId}`, data),
+  deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
+  createReply: (commentId, data) => api.post(`/comments/${commentId}/replies`, data),
+  getReplies: (commentId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/comments/${commentId}/replies?${queryString}`)
+  },
+  addReaction: (commentId, data) => api.post(`/comments/${commentId}/reactions`, data),
+  removeReaction: (commentId, reactionType) => api.delete(`/comments/${commentId}/reactions/${reactionType}`),
+  resolveComment: (commentId) => api.put(`/comments/${commentId}/resolve`),
+  unresolveComment: (commentId) => api.put(`/comments/${commentId}/unresolve`),
+  uploadAttachment: (commentId, file) => {
+    const formData = new FormData();
+    formData.append('attachment', file);
+    return api.post(`/comments/${commentId}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
 }
 
 // Member API
@@ -131,7 +163,38 @@ export const notificationApi = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
 }
 
-// Note: User profile operations are handled through authApi
+// User Profile API
+export const userApi = {
+  getProfile: () => api.get('/users/me'),
+  updateProfile: (data) => api.put('/users/me', data),
+  changePassword: (data) => api.put('/users/me/password', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.post('/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  deleteAvatar: () => api.delete('/users/me/avatar'),
+  getPreferences: () => api.get('/users/me/preferences'),
+  updatePreferences: (data) => api.put('/users/me/preferences', data),
+  getActivity: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/users/me/activity?${queryString}`)
+  },
+  getNotificationSettings: () => api.get('/users/me/notification-settings'),
+  updateNotificationSettings: (data) => api.put('/users/me/notification-settings', data),
+  getBoardsSummary: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/users/me/boards/summary?${queryString}`)
+  },
+  getStats: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/users/me/stats?${queryString}`)
+  },
+  deleteAccount: (data) => api.delete('/users/me', { data }),
+  exportData: () => api.get('/users/me/export')
+}
 
 // Admin API
 export const adminApi = {
@@ -140,8 +203,12 @@ export const adminApi = {
     const queryString = new URLSearchParams(params).toString()
     return api.get(`/admin/users?${queryString}`)
   },
-  banUser: (userId) => api.put(`/admin/users/${userId}/ban`),
+  getUser: (userId) => api.get(`/admin/users/${userId}`),
+  updateUser: (userId, data) => api.put(`/admin/users/${userId}`, data),
+  banUser: (userId, data) => api.put(`/admin/users/${userId}/ban`, data),
   unbanUser: (userId) => api.put(`/admin/users/${userId}/unban`),
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+  impersonateUser: (userId) => api.post(`/admin/users/${userId}/impersonate`),
   getAllBoards: (params = {}) => {
     const queryString = new URLSearchParams(params).toString()
     return api.get(`/admin/boards?${queryString}`)
@@ -155,5 +222,101 @@ export const adminApi = {
     return api.get(`/admin/stats?${queryString}`)
   },
 }
+
+// Analytics API
+export const analyticsApi = {
+  getOverview: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/overview?${queryString}`)
+  },
+  getActivity: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/activity?${queryString}`)
+  },
+  getProductivity: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/productivity?${queryString}`)
+  },
+  getBoards: () => api.get('/analytics/boards'),
+  getUserStats: (userId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/users/${userId}?${queryString}`)
+  },
+  getBoardStats: (boardId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/boards/${boardId}?${queryString}`)
+  },
+  exportAnalytics: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/analytics/export?${queryString}`)
+  },
+}
+
+// Search API
+export const searchApi = {
+  search: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/search?${queryString}`)
+  },
+  quickSearch: (query) => {
+    return api.get(`/search/quick?q=${encodeURIComponent(query)}`)
+  },
+  getSavedSearches: () => api.get('/search/saved'),
+  saveSearch: (data) => api.post('/search/saved', data),
+  updateSavedSearch: (searchId, data) => api.put(`/search/saved/${searchId}`, data),
+  deleteSavedSearch: (searchId) => api.delete(`/search/saved/${searchId}`),
+  getUsers: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/search/users?${queryString}`)
+  },
+  getLabels: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/search/labels?${queryString}`)
+  },
+}
+
+// Template API
+export const templateApi = {
+  getTemplates: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return api.get(`/templates?${queryString}`)
+  },
+  getTemplate: (templateId) => api.get(`/templates/${templateId}`),
+  createFromTemplate: (templateId, data) => api.post(`/templates/${templateId}/create`, data),
+  saveAsTemplate: (boardId, data) => api.post(`/boards/${boardId}/save-as-template`, data),
+  getCategories: () => api.get('/templates/categories'),
+}
+
+// Attachment API
+export const attachmentApi = {
+  uploadFile: (file, type = 'general') => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', type)
+    return api.post('/attachments/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  deleteFile: (attachmentId) => api.delete(`/attachments/${attachmentId}`),
+  getFile: (attachmentId) => api.get(`/attachments/${attachmentId}`),
+  downloadFile: (attachmentId) => {
+    return api.get(`/attachments/${attachmentId}/download`, {
+      responseType: 'blob'
+    })
+  },
+}
+
+// Notification API Extensions
+export const notificationApi2 = {
+  ...notificationApi,
+  deleteNotification: (notificationId) => api.delete(`/notifications/${notificationId}`),
+  deleteMultiple: (notificationIds) => api.delete('/notifications/bulk', { data: { ids: notificationIds } }),
+  markMultipleAsRead: (notificationIds) => api.put('/notifications/bulk/read', { ids: notificationIds }),
+  getSettings: () => api.get('/notifications/settings'),
+  updateSettings: (data) => api.put('/notifications/settings', data),
+}
+
+// Update the original notificationApi to include new methods
+Object.assign(notificationApi, notificationApi2)
 
 export default api

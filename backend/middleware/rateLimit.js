@@ -243,6 +243,12 @@ const commentCreationLimit = createSlidingWindowLimiter(
   (req) => `comment_creation:${req.userId}`
 );
 
+const uploadRateLimit = createSlidingWindowLimiter(
+  10, // 10 uploads
+  5 * 60 * 1000, // per 5 minutes
+  (req) => `file_upload:${req.userId}`
+);
+
 // Initialize rate limiters when the module is loaded
 const initPromise = initializeRateLimiters().then(() => {
   // Set the actual limiters after initialization
@@ -277,5 +283,6 @@ module.exports = {
   boardCreationLimit,
   cardCreationLimit,
   commentCreationLimit,
+  uploadRateLimit,
   createSlidingWindowLimiter
 };

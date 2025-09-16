@@ -378,6 +378,359 @@ class CommentController {
       });
     }
   }
+
+  // Get single comment
+  async getComment(req, res) {
+    try {
+      const { commentId } = req.params;
+
+      const comment = await Comment.findByPk(commentId, {
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'firstName', 'lastName', 'avatar']
+          },
+          {
+            model: Comment,
+            as: 'replies',
+            include: [{
+              model: User,
+              as: 'author',
+              attributes: ['id', 'firstName', 'lastName', 'avatar']
+            }],
+            order: [['createdAt', 'ASC']]
+          }
+        ]
+      });
+
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: { comment }
+      });
+    } catch (error) {
+      console.error('Get comment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get comment'
+      });
+    }
+  }
+
+  // Create reply to comment
+  async createReply(req, res) {
+    try {
+      const { commentId } = req.params;
+      const { content } = req.body;
+
+      const parentComment = await Comment.findByPk(commentId, {
+        include: [{ model: Card, include: [{ model: Column, include: [Board] }] }]
+      });
+
+      if (!parentComment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Parent comment not found'
+        });
+      }
+
+      const reply = await Comment.create({
+        content,
+        cardId: parentComment.cardId,
+        parentId: commentId,
+        authorId: req.user.id
+      });
+
+      const replyWithAuthor = await Comment.findByPk(reply.id, {
+        include: [{
+          model: User,
+          as: 'author',
+          attributes: ['id', 'firstName', 'lastName', 'avatar']
+        }]
+      });
+
+      // Audit log
+      await auditService.log('COMMENT_REPLY_CREATED', req.user.id, {
+        commentId: reply.id,
+        cardId: parentComment.cardId,
+        parentCommentId: commentId
+      });
+
+      // Socket notification
+      socketService.notifyCard(parentComment.cardId, 'commentReplyCreated', {
+        reply: replyWithAuthor
+      });
+
+      res.status(201).json({
+        success: true,
+        data: { reply: replyWithAuthor },
+        message: 'Reply created successfully'
+      });
+    } catch (error) {
+      console.error('Create reply error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create reply'
+      });
+    }
+  }
+
+  // Get comment replies
+  async getReplies(req, res) {
+    try {
+      const { commentId } = req.params;
+      const { page = 1, limit = 20 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const replies = await Comment.findAndCountAll({
+        where: { parentId: commentId },
+        include: [{
+          model: User,
+          as: 'author',
+          attributes: ['id', 'firstName', 'lastName', 'avatar']
+        }],
+        order: [['createdAt', 'ASC']],
+        limit: parseInt(limit),
+        offset
+      });
+
+      res.json({
+        success: true,
+        data: {
+          replies: replies.rows,
+          pagination: {
+            total: replies.count,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            pages: Math.ceil(replies.count / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get replies error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get replies'
+      });
+    }
+  }
+
+  // Add reaction to comment
+  async addReaction(req, res) {
+    try {
+      const { commentId } = req.params;
+      const { type } = req.body;
+
+      const comment = await Comment.findByPk(commentId);
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      const reactions = comment.reactions || {};
+      if (!reactions[type]) {
+        reactions[type] = [];
+      }
+
+      const userReactionIndex = reactions[type].indexOf(req.user.id);
+      if (userReactionIndex === -1) {
+        reactions[type].push(req.user.id);
+      }
+
+      await comment.update({ reactions });
+
+      // Audit log
+      await auditService.log('COMMENT_REACTION_ADDED', req.user.id, {
+        commentId,
+        reactionType: type
+      });
+
+      // Socket notification
+      socketService.notifyCard(comment.cardId, 'commentReactionAdded', {
+        commentId,
+        reaction: { type, userId: req.user.id }
+      });
+
+      res.json({
+        success: true,
+        data: { reactions },
+        message: 'Reaction added successfully'
+      });
+    } catch (error) {
+      console.error('Add reaction error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add reaction'
+      });
+    }
+  }
+
+  // Remove reaction from comment
+  async removeReaction(req, res) {
+    try {
+      const { commentId, reactionType } = req.params;
+
+      const comment = await Comment.findByPk(commentId);
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      const reactions = comment.reactions || {};
+      if (reactions[reactionType]) {
+        reactions[reactionType] = reactions[reactionType].filter(
+          userId => userId !== req.user.id
+        );
+        if (reactions[reactionType].length === 0) {
+          delete reactions[reactionType];
+        }
+      }
+
+      await comment.update({ reactions });
+
+      // Audit log
+      await auditService.log('COMMENT_REACTION_REMOVED', req.user.id, {
+        commentId,
+        reactionType
+      });
+
+      // Socket notification
+      socketService.notifyCard(comment.cardId, 'commentReactionRemoved', {
+        commentId,
+        reaction: { type: reactionType, userId: req.user.id }
+      });
+
+      res.json({
+        success: true,
+        data: { reactions },
+        message: 'Reaction removed successfully'
+      });
+    } catch (error) {
+      console.error('Remove reaction error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to remove reaction'
+      });
+    }
+  }
+
+  // Get comment history
+  async getCommentHistory(req, res) {
+    try {
+      const { commentId } = req.params;
+
+      // This would require an audit log or version history table
+      // For now, return empty history
+      res.json({
+        success: true,
+        data: { history: [] },
+        message: 'Comment history retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get comment history error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get comment history'
+      });
+    }
+  }
+
+  // Resolve comment
+  async resolveComment(req, res) {
+    try {
+      const { commentId } = req.params;
+
+      const comment = await Comment.findByPk(commentId);
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      await comment.update({
+        isResolved: true,
+        resolvedBy: req.user.id,
+        resolvedAt: new Date()
+      });
+
+      // Audit log
+      await auditService.log('COMMENT_RESOLVED', req.user.id, {
+        commentId
+      });
+
+      // Socket notification
+      socketService.notifyCard(comment.cardId, 'commentResolved', {
+        commentId,
+        resolvedBy: req.user.id
+      });
+
+      res.json({
+        success: true,
+        message: 'Comment resolved successfully'
+      });
+    } catch (error) {
+      console.error('Resolve comment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to resolve comment'
+      });
+    }
+  }
+
+  // Unresolve comment
+  async unresolveComment(req, res) {
+    try {
+      const { commentId } = req.params;
+
+      const comment = await Comment.findByPk(commentId);
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      await comment.update({
+        isResolved: false,
+        resolvedBy: null,
+        resolvedAt: null
+      });
+
+      // Audit log
+      await auditService.log('COMMENT_UNRESOLVED', req.user.id, {
+        commentId
+      });
+
+      // Socket notification
+      socketService.notifyCard(comment.cardId, 'commentUnresolved', {
+        commentId,
+        unresolvedBy: req.user.id
+      });
+
+      res.json({
+        success: true,
+        message: 'Comment unresolved successfully'
+      });
+    } catch (error) {
+      console.error('Unresolve comment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to unresolve comment'
+      });
+    }
+  }
 }
 
 module.exports = new CommentController();

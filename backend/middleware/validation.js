@@ -101,12 +101,59 @@ const schemas = {
   updateProfile: Joi.object({
     firstName: Joi.string().min(1).max(50),
     lastName: Joi.string().min(1).max(50),
-    avatar: Joi.string().uri()
+    username: Joi.string().min(3).max(50).pattern(/^[a-zA-Z0-9_]+$/),
+    bio: Joi.string().max(500).allow(''),
+    timezone: Joi.string().max(50),
+    language: Joi.string().valid('en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko').default('en')
   }),
 
   changePassword: Joi.object({
     currentPassword: Joi.string().required(),
     newPassword: Joi.string().min(6).max(255).required()
+  }),
+
+  updatePreferences: Joi.object({
+    preferences: Joi.object({
+      theme: Joi.string().valid('light', 'dark', 'auto').default('light'),
+      boardView: Joi.string().valid('kanban', 'list', 'calendar').default('kanban'),
+      emailDigest: Joi.boolean().default(true),
+      compactMode: Joi.boolean().default(false),
+      showCompletedCards: Joi.boolean().default(false)
+    }),
+    timezone: Joi.string().max(50),
+    language: Joi.string().valid('en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko'),
+    theme: Joi.string().valid('light', 'dark', 'auto')
+  }),
+
+  updateNotificationSettings: Joi.object({
+    settings: Joi.object({
+      email: Joi.object({
+        cardAssigned: Joi.boolean(),
+        cardDue: Joi.boolean(),
+        boardInvite: Joi.boolean(),
+        comments: Joi.boolean(),
+        updates: Joi.boolean()
+      }),
+      push: Joi.object({
+        cardAssigned: Joi.boolean(),
+        cardDue: Joi.boolean(),
+        boardInvite: Joi.boolean(),
+        comments: Joi.boolean(),
+        updates: Joi.boolean()
+      }),
+      inApp: Joi.object({
+        cardAssigned: Joi.boolean(),
+        cardDue: Joi.boolean(),
+        boardInvite: Joi.boolean(),
+        comments: Joi.boolean(),
+        updates: Joi.boolean()
+      })
+    }).required()
+  }),
+
+  deleteAccount: Joi.object({
+    password: Joi.string().required(),
+    confirmation: Joi.string().valid('DELETE_MY_ACCOUNT').required()
   }),
 
   // Board schemas
@@ -206,11 +253,24 @@ const schemas = {
   // Comment schemas
   createComment: Joi.object({
     content: Joi.string().min(1).max(1000).required(),
-    parentId: Joi.string().uuid()
+    parentId: Joi.string().uuid().allow(null)
   }),
 
   updateComment: Joi.object({
     content: Joi.string().min(1).max(1000).required()
+  }),
+
+  createReply: Joi.object({
+    content: Joi.string().min(1).max(1000).required()
+  }),
+
+  createReaction: Joi.object({
+    type: Joi.string().valid('like', 'love', 'laugh', 'angry', 'sad').required()
+  }),
+
+  duplicateColumn: Joi.object({
+    title: Joi.string().min(1).max(50),
+    includeCards: Joi.boolean().default(false)
   }),
 
   // Board member schemas
@@ -267,6 +327,49 @@ const schemas = {
 
   notificationIdParam: Joi.object({
     notificationId: Joi.string().uuid().required()
+  }),
+
+  userIdParam: Joi.object({
+    userId: Joi.string().uuid().required()
+  }),
+
+  // Admin schemas
+  adminUpdateUser: Joi.object({
+    firstName: Joi.string().min(1).max(50),
+    lastName: Joi.string().min(1).max(50),
+    email: Joi.string().email(),
+    role: Joi.string().valid('user', 'admin'),
+    isActive: Joi.boolean(),
+    verified: Joi.boolean()
+  }),
+
+  banUser: Joi.object({
+    reason: Joi.string().min(1).max(500).required(),
+    duration: Joi.number().integer().min(1).max(365) // days
+  }),
+
+  // Query schemas
+  usersQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    search: Joi.string().min(1).max(100),
+    status: Joi.string().valid('active', 'banned', 'all'),
+    role: Joi.string().valid('user', 'admin'),
+    sort: Joi.string().valid('createdAt', 'updatedAt', 'firstName', 'lastName', 'email'),
+    order: Joi.string().valid('ASC', 'DESC').default('DESC')
+  }),
+
+  boardsQuery: Joi.object({
+    status: Joi.string().valid('active', 'archived', 'all').default('active'),
+    visibility: Joi.string().valid('private', 'team', 'public'),
+    sort: Joi.string().valid('createdAt', 'updatedAt', 'title'),
+    order: Joi.string().valid('ASC', 'DESC').default('DESC')
+  }),
+
+  dateRange: Joi.object({
+    startDate: Joi.date().iso(),
+    endDate: Joi.date().iso().min(Joi.ref('startDate')),
+    period: Joi.string().valid('7d', '30d', '90d', '1y')
   })
 };
 

@@ -9,6 +9,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { ArrowLeft, User, Mail, Shield, Bell, Palette } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { MainLayout } from '../components/layout/MainLayout'
 
 const profileSchema = yup.object({
   firstName: yup.string().required('First name is required').min(2, 'First name must be at least 2 characters'),
@@ -106,26 +107,20 @@ export const ProfilePage = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-secondary-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link
-              to="/dashboard"
-              className="flex items-center text-secondary-600 hover:text-secondary-900 mr-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Link>
-            <h1 className="text-xl font-semibold text-secondary-900">
-              Account Settings
-            </h1>
-          </div>
-        </div>
-      </header>
-
+    <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Link
+            to="/dashboard"
+            className="flex items-center text-secondary-600 hover:text-secondary-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Link>
+          <h1 className="text-2xl font-bold text-secondary-900">
+            Account Settings
+          </h1>
+        </div>
         <div className="bg-white rounded-lg shadow-card overflow-hidden">
           {/* Tabs */}
           <div className="border-b border-secondary-200">
@@ -350,6 +345,6 @@ export const ProfilePage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }
